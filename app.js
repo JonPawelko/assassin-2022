@@ -22,7 +22,7 @@ const config = {
   authRequired: false,
   auth0Logout: true,
   secret: 'kjgfkjwehrasrjbadjbjhsdfjbsdfgjakasdkdgf9kb2agkn',
-  baseURL: 'http://localhost:3000',
+  baseURL: 'http://164.90.140.175',
   clientID: 'xILNWHiJzCD9MOOltuo391jUROB7Al0Q',
   issuerBaseURL: 'https://dev-ae79isjb.us.auth0.com'
 };
