@@ -1,0 +1,14 @@
+<form action="/assassin/joinTeam" method="post">
+
+    <div class="form-group">
+        8-digit Team Code:<input type="text" class="form-control" name="joinTeamCode" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+        <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+    </div>
+
+    <div class="form-group">
+        <input type="submit" class="btn btn-info" value="Join Team"/>
+    </div>
+</form>
