@@ -25,7 +25,7 @@ const config = {
   baseURL: 'http://159.65.180.75',
   clientID: 'xILNWHiJzCD9MOOltuo391jUROB7Al0Q',
   issuerBaseURL: 'https://dev-ae79isjb.us.auth0.com',
-  scope: 'openid'
+  scope: 'openid profile email'
 };
 
 // auth router attaches /login, /logout, and /callback routes to the baseURL
