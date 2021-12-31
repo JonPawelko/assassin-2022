@@ -24,7 +24,8 @@ const config = {
   secret: 'kjgfkjwehrasrjbadjbjhsdfjbsdfgjakasdkdgf9kb2agkn',
   baseURL: 'http://159.65.180.75',
   clientID: 'xILNWHiJzCD9MOOltuo391jUROB7Al0Q',
-  issuerBaseURL: 'https://dev-ae79isjb.us.auth0.com'
+  issuerBaseURL: 'https://dev-ae79isjb.us.auth0.com',
+  scope: 'openid'
 };
 
 // auth router attaches /login, /logout, and /callback routes to the baseURL
