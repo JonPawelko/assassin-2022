@@ -22,10 +22,10 @@ const config = {
   authRequired: false,
   auth0Logout: true,
   secret: 'kjgfkjwehrasrjbadjbjhsdfjbsdfgjakasdkdgf9kb2agkn',
-  baseURL: 'http://159.65.180.75',
+  baseURL: 'http://localhost:3000',
+  // baseURL: 'http://159.65.180.75', // server version not working yet
   clientID: 'xILNWHiJzCD9MOOltuo391jUROB7Al0Q',
-  issuerBaseURL: 'https://dev-ae79isjb.us.auth0.com',
-  scope: 'openid profile email'
+  issuerBaseURL: 'https://dev-ae79isjb.us.auth0.com'
 };
 
 // auth router attaches /login, /logout, and /callback routes to the baseURL
