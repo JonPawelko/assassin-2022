@@ -1,3 +1,4 @@
+<link rel="stylesheet" type="text/css" href="\stylesheets\custom.css">
 <div class="card">
 
   <div class="card-header">
@@ -14,15 +15,17 @@
 
     <form>
     <label>Target Pic: </label><br>
-    <img src="<%= targetPic %>" loading="lazy">
+    <img src=<%=targetPic%>
+     loading="lazy">
     </form>
+
     <br>
 
     <form action="/assassin/validateKill" method="post">
 
         <div class="form-group">
             <label>My Target's Target's Name:</label>
-            <input type="text" class="form-control" name="myKillName" autocomplete="off">
+            <input type="text" name="myKillName" size="12" autocomplete="off">
         </div>
 
         <div class="form-group">

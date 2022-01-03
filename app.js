@@ -22,8 +22,8 @@ const config = {
   authRequired: false,
   auth0Logout: true,
   secret: 'kjgfkjwehrasrjbadjbjhsdfjbsdfgjakasdkdgf9kb2agkn',
+  // baseURL: 'http://159.65.180.75',
   baseURL: 'http://localhost:3000',
-  // baseURL: 'http://159.65.180.75', // server version not working yet
   clientID: 'xILNWHiJzCD9MOOltuo391jUROB7Al0Q',
   issuerBaseURL: 'https://dev-ae79isjb.us.auth0.com'
 };
@@ -52,7 +52,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use(express.static('public'));
-app.use(express.static('upload'));
+// app.use(express.static('upload'));
+
+//app.use('/static', express.static(path.join(__dirname, 'public')))
 
 app.use(session({
     cookie: { maxAge: 60000 },

@@ -1,0 +1,21 @@
+.card
+{
+         border-color: black;
+         border-width: 1px;
+         width: 500px;
+}
+
+.card-header
+{
+         background-color: #B8B8B8;
+         border-color: black;
+         border-width: 1px;
+         font-weight: bold;
+}
+
+img {
+  border: 1px solid black;
+  border-radius: 2px;
+  padding: 2px;
+  width: 350px;
+}

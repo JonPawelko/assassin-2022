@@ -1,4 +1,4 @@
-
+<link rel="stylesheet" type="text/css" href="\stylesheets\custom.css">
 <div class="card">
 
   <div class="card-header">
@@ -71,7 +71,7 @@
 
                   <div class="form-group">
                       <label>Enter 8-digit Player Code to Remove:</label>
-                      <input type="text" class="form-control" name="removePlayerCode" autocomplete="off">
+                      <input type="text" size="12" name="removePlayerCode" autocomplete="off">
                   </div>
 
                   <div class="form-group">
@@ -87,12 +87,11 @@
         <% } %>
 
 
-        <br>
         <form action="/assassin/addPlayer" method="post">
 
           <div class="form-group">
               <label>Enter 8-digit Player Code to Add:</label>
-              <input type="text" class="form-control" name="enteredPlayerCode" autocomplete="off">
+              <input type="text" size="12" name="enteredPlayerCode" autocomplete="off">
           </div>
 
           <div class="form-group">
