@@ -35,7 +35,7 @@
 					<form action="/assassin/activateAssassin" method="post">
 							<div class="form-group">
 									<label>8-digit Player Code:</label>
-									<input type="text" size="12" name="playerCode" value="" autocomplete="off">
+									<input type="search" size="12" name="playerCode" value="" autocomplete="off">
 							</div>
 							<div class="form-group">
 									<input type="submit" class="btn btn-info" value="Activate"/>
@@ -47,11 +47,11 @@
 
 				<div class="card-body">
 
-						<form action="/assassin/newAssassin" method="post" encType="multipart/form-data">
+						<form autocomplete="off" action="/assassin/newAssassin" method="post" encType="multipart/form-data">
 
 							<div class="form-group">
 									<label>Player Name:</label>
-									<input type="text" size="12"  name="playerName" autocomplete="off">
+									<input type="search" size="12" name="playerName" value="" autocomplete="off">
 							</div>
 
 							<div class="form-group">
@@ -61,12 +61,12 @@
 
 							<div class="form-group">
 									<label>New Team Name (Optional):</label>
-									<input type="text" size="12" name="playerTeamName" value="">
+									<input type="search" size="12" name="playerTeamName" value="" autocomplete="off">
 							</div>
 
 							<div class="form-group">
 									<label>Phone (Optional):</label>
-									<input type="text" size="12" name="playerPhone" value="">
+									<input type="search" size="12" name="playerPhone" value="" autocomplete="off">
 							</div>
 
 							<div class="form-group">

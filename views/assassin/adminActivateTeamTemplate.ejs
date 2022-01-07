@@ -1,0 +1,91 @@
+<div class="card-body">
+
+    <form autocomplete="off" action="/assassin/adminActivateTeam" method="post" encType="multipart/form-data">
+
+      <div class="form-group">
+          <label>Team Code: </label><%= teamCode %>
+      </div>
+      <br>
+
+      <input type="hidden" name="activatedTeamCode" value="<%= teamCode %>">
+
+      <div class="form-group">
+          <label>New Team Name:</label>
+          <input type="search" size="12" name="teamName" value="" autocomplete="off">
+      </div>
+<br>
+      <div class="form-group">
+          <label>Player 1 (Captain) Code:</label><%= p1Code %><br><br>
+          <input type="hidden" name="captainCode" value="<%= p1Code %>">
+          <label>Player 1 (Captain) Name:</label>
+          <input type="search" size="12" name="captainName" value="" autocomplete="off">
+      </div>
+<br>
+      <div class="form-group">
+          <label>Player 1 Phone:</label>
+          <input type="search" size="12" name="captainPhone" value="" autocomplete="off">
+      </div>
+<br>
+      <div class="form-group">
+          <label>Player 1 Photo:</label>
+          <input type="file" size="15" name="captainPhotoFile" accept="image/*" />
+      </div>
+<br>
+      <div class="form-group">
+          <label>Player 1 Celebritarian:</label>
+          <input type="checkbox" name="captainCeleb" unchecked>
+      </div>
+<br>
+
+      <div class="form-group">
+          <label>Player 2 Code:</label><%= p2Code %><br><br>
+          <input type="hidden" name="player2Code" value="<%= p2Code %>">
+          <label>Player 2 Name:</label>
+          <input type="search" size="12" name="player2Name" value="" autocomplete="off">
+      </div>
+<br>
+      <div class="form-group">
+          <label>Player 2 Phone:</label>
+          <input type="search" size="12" name="player2Phone" value="" autocomplete="off">
+      </div>
+<br>
+      <div class="form-group">
+          <label>Player 2 Photo:</label>
+          <input type="file" size="15" name="player2PhotoFile" accept="image/*" />
+      </div>
+<br>
+      <div class="form-group">
+          <label>Player 2 Celebritarian:</label>
+          <input type="checkbox" name="player2Celeb" unchecked>
+      </div>
+<br>
+
+      <div class="form-group">
+          <label>Player 3 Code:</label><%= p3Code %><br><br>
+          <input type="hidden" name="player3Code" value="<%= p3Code %>">
+          <label>Player 3 Name:</label>
+          <input type="search" size="12" name="player3Name" value="" autocomplete="off">
+      </div>
+<br>
+      <div class="form-group">
+          <label>Player 3 Phone:</label>
+          <input type="search" size="12" name="player3Phone" value="" autocomplete="off">
+      </div>
+<br>
+      <div class="form-group">
+          <label>Player 3 Photo:</label>
+          <input type="file" size="15" name="player3PhotoFile" accept="image/*" />
+      </div>
+<br>
+      <div class="form-group">
+          <label>Player 3 Celebritarian:</label>
+          <input type="checkbox" name="player3Celeb" unchecked>
+      </div>
+<br>
+
+      <div class="form-group">
+          <input type="submit" class="btn btn-info" value="Activate Team"/>
+      </div>
+    </form>
+
+</div>

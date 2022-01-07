@@ -183,6 +183,9 @@
 			<label>Total Team Bounties Earned: </label> <%= totalTeamBountiesEarned %>
 			<br><br>
 
+			<label>Your Photo Status: </label> <%= playerPicStatus %>
+			<br>
+
 			<form action="/assassin/viewMyPicture" method="post">
 				<div class="form-group">
 						<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
@@ -198,9 +201,19 @@
 <br>
 <%- include('quitFeatures'); %>
 <br>
-<button onclick="window.location='/logout'">Logout</button>
 
+<form action="/assassin/assassinLogout" method="post">
+	<div class="form-group">
+			<input type="submit" class="btn btn-info" value="Logout"/>
+	</div>
+</form>
 
+<br>
+<br>
+------------------------------------------------
+Start Admin Features
+
+<%- include('adminFeatures'); %>
 
 </body>
 </html>

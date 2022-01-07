@@ -17,14 +17,19 @@
     	<div class="card-header">
 			Welcome to Assassin! Please choose an option below.
 		</div>
-        <div class="card-body">
-            				<button onclick="window.location='/login'">Login</button>
-        </div>
-				<div class="card-body">
 
-						<button onclick="window.location='/register'">Register</button>
-        </div>
-    </div>
+		<br>
+				<form action="/assassin/assassinLogin" method="post">
+					<div class="form-group">
+							<input type="submit" style="margin:10px" class="btn btn-info" value="Login"/>
+					</div>
+				</form>
+
+				<form action="/assassin/assassinRegister" method="post">
+					<div class="form-group">
+							<input type="submit" style="margin:10px" class="btn btn-info" value="Register"/>
+					</div>
+				</form>
 
 </body>
 </html>
