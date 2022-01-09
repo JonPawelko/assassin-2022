@@ -1,0 +1,14 @@
+<link rel="stylesheet" type="text/css" href="\stylesheets\custom.css">
+
+<%
+    for(var i=0; i<players.length; i++)
+    {%>
+        <form autocomplete='off' action='adminSearchForPlayer' method='post' encType='multipart/form-data'>
+          <div class='form-group'>
+            <input type='hidden' name='teamName' value=''>
+            <input type='hidden' name='playerName' value=''>
+            <input type='hidden' name='playerCode' value='<%=players[i]['player-code']%>'>
+            <input type='submit' class='link-button' value='<%=players[i]['player-name']%> - <%=players[i]['team-name']%> - <%=players[i]['player-code']%>'/>
+          </div>
+        </form>
+<% } %>

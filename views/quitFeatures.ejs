@@ -1,0 +1,12 @@
+<link rel="stylesheet" type="text/css" href="\stylesheets\custom.css">
+<form action="quitGame" method="post">
+
+    <div class="form-group">
+        <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+        <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
+    </div>
+
+    <div class="form-group">
+        <input type="submit" class="btn btn-info" value="Quit Game"/>
+    </div>
+</form>

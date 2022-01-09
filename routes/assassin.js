@@ -88,7 +88,7 @@ router.get('/', function(req, res, next) {
               if (rows[0][0].playerCode == null)
               {
                   console.log("Player code does not exist");
-                  res.render('assassin/landing2');
+                  res.render('landing2');
               }
               else  // Player exists, continue logic checks
               {
@@ -108,7 +108,7 @@ router.get('/', function(req, res, next) {
                               console.log(rows2[0]);
 
                               // route to home page passing Player info and teammate info
-                              res.render('assassin/home', {
+                              res.render('home', {
                               playerCode: rows[0][0].playerCode,
                               playerName: rows[0][0].playerName,
                               playerStatus: rows[0][0].playerStatus,
@@ -136,7 +136,7 @@ router.get('/', function(req, res, next) {
                   }
                   else // Player has no teammates, don't need to send Captain Name or Live Player (must be single player)
                   {
-                      res.render('assassin/home', {
+                      res.render('home', {
                       playerCode: rows[0][0].playerCode,
                       playerName: rows[0][0].playerName,
                       playerStatus: rows[0][0].playerStatus,
@@ -170,7 +170,7 @@ router.get('/', function(req, res, next) {
   else
   {   // user not authenticated, send to main landing page
       console.log("Not authenticated");
-      res.render('assassin/landing');
+      res.render('landing');
   }
 
 });
@@ -550,7 +550,7 @@ router.post('/viewMyPicture', function(req, res, next)
   console.log(playerPicPath);
 
   // No stored procedure needed, just display my pic
-  res.render('assassin/viewMyPicture', {playerCode: req.body.myPlayerCode, myPicture: playerPicPath});
+  res.render('viewMyPicture', {playerCode: req.body.myPlayerCode, myPicture: playerPicPath});
 
 }); // end router post
 
@@ -577,7 +577,7 @@ router.post('/adminActivateTeamPrep', function(req, res, next)
 
           if (rows[0].length == 3)
           {
-              res.render('assassin/adminActivateTeamTemplate', {
+              res.render('adminActivateTeamTemplate', {
                 teamCode: req.body.teamCode,
                 p1Code: rows[0][0]['player-code'],
                 p2Code: rows[0][1]['player-code'],
@@ -587,14 +587,14 @@ router.post('/adminActivateTeamPrep', function(req, res, next)
           {
               if (rows[0].length == 2)
               {
-                res.render('assassin/adminActivateTeamTemplate', {
+                res.render('adminActivateTeamTemplate', {
                   teamCode: req.body.activatedTeamCode,
                   p1Code: rows[0][0]['player-code'],
                   p2Code: rows[0][1]['player-code'],
                   p3Code: ""});
               }
               else {
-                res.render('assassin/adminActivateTeamTemplate', {
+                res.render('adminActivateTeamTemplate', {
                   teamCode: req.body.activatedTeamCode,
                   p1Code: rows[0][0]['player-code'],
                   p2Code: "",
@@ -796,7 +796,7 @@ router.post('/adminSearchForTeam', function(req, res, next)
 
             if (rows[0].length == 1)
             {
-                res.render('assassin/adminTeamHome',
+                res.render('adminTeamHome',
                 {
                     teamCode: rows[0][0]['team-code'],
                     teamName: rows[0][0]['team-name'],
@@ -804,6 +804,26 @@ router.post('/adminSearchForTeam', function(req, res, next)
                     bountiesOwed: rows[0][0]['bounties-owed'],
                     captainName: rows[0][0]['player-name']
                 });
+
+            }
+            else
+            {
+                if (rows[0].length > 1)
+                {
+                    console.log("-----------------------");
+                    console.log(rows[0]);
+
+                    res.render('adminTeamList',
+                    {
+                        teams: rows[0]
+                    });
+
+                }
+                else
+                {
+                    // no data found - return something
+
+                }
 
             }
 
@@ -854,7 +874,7 @@ router.post('/adminSearchForPlayer', function(req, res, next)
             req.flash('error', err);
         } else
         {
-            // Create Player worked, now upload photos
+            // adminSearchForPlayer worked, now inspect data
             console.log("adminSearchForPlayer successful rpc call.");
 
             console.log(rows);
@@ -866,7 +886,7 @@ router.post('/adminSearchForPlayer', function(req, res, next)
             {
                 playerPicPath = "../../" + rows[0][0]['player-pic'];
 
-                res.render('assassin/adminPlayerHome',
+                res.render('adminPlayerHome',
                 {
                     teamCode: rows[0][0]['team-code'],
                     teamName: rows[0][0]['team-name'],
@@ -880,12 +900,33 @@ router.post('/adminSearchForPlayer', function(req, res, next)
                 });
 
             }
+            else
+            {
 
-        } // end else
+                if (rows[0].length > 1)
+                {
+                    console.log("-----------------------");
+                    console.log(rows[0]);
 
-    });
+                    res.render('adminPlayerList',
+                    {
+                        players: rows[0]
+                    });
 
-});
+                }
+                else
+                {
+                    // no data found - return something
+
+                }
+
+            } // end else rows not = 1
+
+        } // end else - adminSearchForPlayer call
+
+    });  // end stored procedure call
+
+});  // end route
 
 // -------------------------------------------------------------
 // adminApprovePicture called by admin to approve a players pic
@@ -997,6 +1038,15 @@ router.post('/adminMarkPaid', function(req, res, next)
   }); // end query
 
 }); // end post('/adminPayBounties')
+
+// -------------------------------------------------------------
+// adminMarkPaid called by admin to update team data including paying out bounties
+
+router.post('/test', function(req, res, next)
+{
+  console.log("Got into new test call - player number is " + req.body.testCode);
+
+}); // end test
 
 // -------------------------------------------------------------
 // Export the router

@@ -1,0 +1,34 @@
+<label>Team Name: </label><%= teamName %>
+<br>
+<label>Team Code: </label><%= teamCode %>
+<br>
+<label>Team Status: </label><%= teamStatus %>
+<br>
+<label>Captain Name: </label><%= captainName %>
+<br>
+<label>Bounties Owed: </label><%= bountiesOwed %>
+<br>
+
+<form autocomplete="off" action="adminMarkPaid" method="post" encType="multipart/form-data">
+
+  <input type="hidden" name="teamCode" value="<%= teamCode %>">
+
+  <div class="form-group">
+      <input type="submit" class="btn btn-info" value="Mark Paid"/>
+  </div>
+  <br>
+
+</form>
+
+<form autocomplete="off" action="adminPayBounties" method="post" encType="multipart/form-data">
+
+  <input type="hidden" name="teamCode" value="<%= teamCode %>">
+
+  <div class="form-group">
+      <label>Pay Bounties:</label>
+      <input type="search" size="12" name="numBounties" value="" autocomplete="off">
+      <input type="submit" class="btn btn-info" value="Pay"/>
+  </div>
+  <br>
+
+</form>

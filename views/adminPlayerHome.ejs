@@ -1,0 +1,67 @@
+<link rel="stylesheet" type="text/css" href="\stylesheets\custom.css">
+
+<label>Player Name: </label><%= playerName %>
+<br>
+<label>Player Code: </label><%= playerCode %>
+<br>
+<label>Player Status: </label><%= playerStatus %>
+<br>
+<label>Player Status: </label><%= playerStatus %>
+<br>
+<label>Celebritarian: </label><%= celebritarian %>
+<br>
+<label>Team Code: </label><%= teamCode %>
+<br>
+<label>Team Status: </label><%= teamStatus %>
+<br>
+<label>Personal Bounties Owed: </label><%= personalBountiesOwed %>
+<br>
+
+<form>
+<img src=<%=playerPhoto%>
+ loading="lazy">
+</form>
+
+<form autocomplete="off" action="adminApprovePicture" method="post" encType="multipart/form-data">
+  <input type="hidden" name="playerCode" value="<%= playerCode %>">
+  <input type="hidden" name="teamStatus" value="<%= teamStatus %>">
+  <input type="hidden" name="teamCode" value="<%= teamCode %>">
+
+  <div class="form-group">
+      <input type="submit" class="btn btn-info" value="Approve Pic"/>
+  </div>
+</form>
+
+<br>
+
+<form autocomplete="off" action="adminRejectPicture" method="post" encType="multipart/form-data">
+  <input type="hidden" name="playerCode" value="<%= playerCode %>">
+  <div class="form-group">
+      <input type="submit" class="btn btn-info" value="Reject Pic"/>
+  </div>
+</form>
+
+
+<form autocomplete="off" action="adminMarkPaid" method="post" encType="multipart/form-data">
+
+  <input type="hidden" name="teamCode" value="<%= teamCode %>">
+
+  <div class="form-group">
+      <input type="submit" class="btn btn-info" value="Mark Paid"/>
+  </div>
+  <br>
+
+</form>
+
+<form autocomplete="off" action="adminPayBounties" method="post" encType="multipart/form-data">
+
+  <input type="hidden" name="teamCode" value="<%= teamCode %>">
+
+  <div class="form-group">
+      <label>Pay Bounties:</label>
+      <input type="search" size="12" name="numBounties" value="<%= personalBountiesOwed %>" autocomplete="off">
+      <input type="submit" class="btn btn-info" value="Pay"/>
+  </div>
+  <br>
+
+</form>

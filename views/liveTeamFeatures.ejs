@@ -1,0 +1,42 @@
+<link rel="stylesheet" type="text/css" href="\stylesheets\custom.css">
+<div class="card">
+
+  <div class="card-header">
+    Your team status is Live!
+  </div>
+
+  <div class="card-body">
+
+    <label>Target Team Name: </label> <%= targetTeamName %>
+    <br>
+
+    <label>Target Name: </label> <%= targetName %>
+    <br>
+
+    <form>
+    <label>Target Pic: </label><br>
+    <img src=<%=targetPic%>
+     loading="lazy">
+    </form>
+
+    <br>
+
+    <form action="validateKill" method="post">
+
+        <div class="form-group">
+            <label>My Target's Target's Name:</label>
+            <input type="text" name="myKillName" size="12" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+            <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
+        </div>
+
+        <div class="form-group">
+            <input type="submit" class="btn btn-info" value="Confirm Kill"/>
+        </div>
+    </form>
+
+  </div>
+
+</div>

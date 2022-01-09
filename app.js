@@ -10,7 +10,6 @@ var session = require('express-session');
 var mysql = require('mysql2');
 var connection  = require('./lib/db');
 
-// var indexRouter = require('./routes/index');
 var assassinRouter = require('./routes/assassin');
 
 var app = express();
@@ -22,8 +21,8 @@ const config = {
   authRequired: false,
   auth0Logout: true,
   secret: 'kjgfkjwehrasrjbadjbjhsdfjbsdfgjakasdkdgf9kb2agkn',
-  baseURL: 'http://159.65.180.75',
-  // baseURL: 'http://localhost:3000',
+  // baseURL: 'http://159.65.180.75',
+  baseURL: 'http://localhost:3000',
   clientID: 'xILNWHiJzCD9MOOltuo391jUROB7Al0Q',
   issuerBaseURL: 'https://dev-ae79isjb.us.auth0.com'
 };
@@ -66,9 +65,8 @@ app.use(session({
 
 app.use(flash());
 
-//app.use('/', indexRouter);
 app.use('/', assassinRouter);
-app.use('/assassin', assassinRouter);
+// app.use('/assassin', assassinRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

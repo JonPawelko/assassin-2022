@@ -19,3 +19,11 @@ img {
   padding: 2px;
   width: 350px;
 }
+
+.link-button {
+     background: none;
+     border: none;
+     color: #1a0dab;
+     text-decoration: underline;
+     cursor: pointer;
+}
