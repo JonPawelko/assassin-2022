@@ -1,73 +1,94 @@
-<div class="card-body">
+<link rel="stylesheet" type="text/css" href="\stylesheets\custom.css">
+<script src="javascripts/utilities.js"></script>
 
-  <form autocomplete="off" action="adminActivateTeamPrep" method="post" encType="multipart/form-data">
+<div class="card" style="width:21rem;">
 
-    <div class="form-group">
-        <label>Team Code:</label>
-        <input type="search" size="12" name="teamCode" value="" autocomplete="off">
-    </div>
+  <div class="card-header">
+    Admin Features
+    <div style="height: 4px;"></div>
+  </div>
 
-    <div class="form-group">
-          <input type="submit" class="btn btn-info" value="Activate Team Prep"/>
-      </div>
+  <div class="card-body">
 
-  </form>
+        <form autocomplete="off" action="adminSearchForPlayer" method="post" encType="multipart/form-data">
+            <div style="height: 12px;"></div>
+            Player Name: <input type="search" size="12" name="playerName" value="" autocomplete="off">
+            <div style="height: 8px;"></div>
+            Team Name: <input type="search" size="12" name="teamName" value="" autocomplete="off">
+            <div style="height: 8px;"></div>
+            Player Code: <input type="search" size="12" name="playerCode" value="" autocomplete="off">
+            <div style="height: 12px;"></div>
+            <input type="submit" class="btn btn-info" value="Search For Player"/>
+        </form>
 
------------------------
-<br>
-<br>
+        <div style="height: 4px;"></div>
+        <hr>
 
-  <form autocomplete="off" action="adminSearchForTeam" method="post" encType="multipart/form-data">
+        <form autocomplete="off" action="adminSearchForTeam" method="post" encType="multipart/form-data">
+            <div style="height: 4px;"></div>
+            Player Name: <input type="search" size="12" name="playerName" value="" autocomplete="off">
+            <div style="height: 8px;"></div>
+            Team Name: <input type="search" size="12" name="teamName" value="" autocomplete="off">
+            <div style="height: 8px;"></div>
+            Team Code: <input type="search" size="12" name="teamCode" value="" autocomplete="off">
+            <div style="height: 12px;"></div>
+            <input type="submit" class="btn btn-info" value="Search For Team"/>
+        </form>
 
-    <div class="form-group">
-        <label>Team Name:</label>
-        <input type="search" size="12" name="teamName" value="" autocomplete="off">
-    </div>
+        <div style="height: 2px;"></div>
+        <hr>
 
-    <div class="form-group">
-      <label>Player Name:</label>
-      <input type="search" size="12" name="playerName" value="" autocomplete="off">
-    </div>
+        <form autocomplete="off" action="adminActivateTeamPrep" method="post" encType="multipart/form-data">
+            <div style="height: 5px;"></div>
+            Team Code: <input type="search" size="12" name="teamCode" value="" autocomplete="off">
+            <div style="height: 12px;"></div>
+            <input type="submit" class="btn btn-info" value="Activate Team Prep"/>
+        </form>
 
-    <div class="form-group">
-        <label>Team Code:</label>
-        <input type="search" size="12" name="teamCode" value="" autocomplete="off">
-    </div>
+        <div style="height: 2px;"></div>
+        <hr>
 
-    <div class="form-group">
-          <input type="submit" class="btn btn-info" value="Search For Team"/>
-    </div>
+        <div style="height: 2px;"></div>
 
-  </form>
+        <form autocomplete="off" action="adminDropBomb" onsubmit="return confirmChoice()" method="post" encType="multipart/form-data">
+            <input type="submit" class="btn btn-info" value="Drop Bomb"/>
+        </form>
 
-  -----------------------
-  <br>
-  <br>
+        <div style="height: 15px;"></div>
 
-  <form autocomplete="off" action="adminSearchForPlayer" method="post" encType="multipart/form-data">
+        <form autocomplete="off" action="adminBulkPictureApprove" method="post" encType="multipart/form-data">
+            <input type="submit" class="btn btn-info" value="Bulk Picture Approve"/>
+        </form>
 
-    <div class="form-group">
-        <label>Team Name:</label>
-        <input type="search" size="12" name="teamName" value="" autocomplete="off">
-    </div>
+        <div style="height: 4px;"></div>
 
-    <div class="form-group">
-      <label>Player Name:</label>
-      <input type="search" size="12" name="playerName" value="" autocomplete="off">
-    </div>
+        <hr>
 
-    <div class="form-group">
-        <label>Player Code:</label>
-        <input type="search" size="12" name="playerCode" value="" autocomplete="off">
-    </div>
+        <div style="height: 4px;"></div>
 
-    <div class="form-group">
-          <input type="submit" class="btn btn-info" value="Search For Player"/>
-    </div>
+        <form autocomplete="off" action="systemCheckForceShiftChange" onsubmit="return confirmChoice(<%= CONFIRM_FORCE_SHIFT %>)" method="post" encType="multipart/form-data">
+            Hours To Go: <input type="search" size="1" name="hoursToGo" value="2" autocomplete="off">
+            <div style="height: 12px;"></div>
+            <input type="submit" class="btn btn-info" value="Force Shift Changes"/>
+            <div style="height: 2px;"></div>
+        </form>
 
-  </form>
+        <hr>
 
-  -----------------------
-  <br>
+        <form autocomplete="off" action="adminShowCreatePrepsPage" method="post" encType="multipart/form-data">
+            <input type="submit" class="btn btn-info" value="Create Prep Templates"/>
+        </form>
+
+        <div style="height: 14px;"></div>
+
+        <form autocomplete="off" action="resetDatabase" method="post" encType="multipart/form-data">
+            <input type="submit" class="btn btn-info" value="Reset DB"/>
+        </form>
+
+        <div style="height: 8px;"></div>
+
+  </div>
 
 </div>
+
+<div style="height: 12px;"></div>

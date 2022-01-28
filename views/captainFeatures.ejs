@@ -1,49 +1,58 @@
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="\stylesheets\custom.css">
-<div class="card">
+<script src="javascripts/utilities.js"></script>
+
+<div style="height: 14px;"></div>
+
+<div class="card" style="width:21rem;">
 
   <div class="card-header">
     You are the Captain of your Team.
+    <div style="height: 4px;"></div>
   </div>
 
   <div class="card-body">
 
-        <form action="rebuy" method="post">
-          <div class="form-group">
-              <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
-              <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-              <input type="submit" class="btn btn-info" value="Rebuy"/>
-          </div>
-        </form>
+        <div style="height: 13px;"></div>
 
         <% 	switch(teamStatus)
   					{
   						  case "Live": case "Waiting":
   										%>
-
-                          <form action="takeBreak" method="post">
-                            <div class="form-group">
-                                <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-                                <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
-                                <input type="submit" class="btn btn-info" value="Take a Break"/>
-                            </div>
+                          <form action="takeBreak" method="post" onsubmit="return confirmChoice(<%= CONFIRM_TAKE_BREAK %>)">
+                              <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+                              <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
+                              <input type="submit" class="btn btn-info" value="Take a Break"/>
+                              <div style="height: 14px;"></div>
                           </form>
-
   										<%
   										break;
 
   							case "Break":
   										%>
-
-                          <form action="returnFromBreak" method="post">
-                            <div class="form-group">
-                                <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
-                                <input type="submit" class="btn btn-info" value="Return From Break"/>
-                            </div>
+                          <form action="returnFromBreak" method="post" onsubmit="return confirmChoice(<%= CONFIRM_RETURN_BREAK %>)">
+                              <input type="hidden" name="playerCode" value="<%= playerCode %>">
+                              <input type="hidden" name="teamCode" value="<%= playerTeamCode %>">
+                              <input type="submit" class="btn btn-info" value="Return From Break"/>
+                              <div style="height: 14px;"></div>
                           </form>
 
   										<%
   										break;
 
+                      case "Inactive":
+
+                          if (teamBountiesOwed >= 1)
+                          {
+                      %>
+                            <form action="rebuy" method="post" onsubmit="return confirmChoice(<%=CONFIRM_REBUY%>)">
+                                <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
+                                <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+                                <input type="submit" class="btn btn-info" value="Rebuy"/>
+                            </form>
+                            <div style="height: 14px;"></div>
+                      <%}
+                        break;
 
   							default:
   						    // code block
@@ -51,61 +60,42 @@
 
   			%>
 
-  </div>
-
-</div>
-<br>
-<div class="card">
-
-  <div class="card-header">
-    Add or Remove Players
-  </div>
-
-  <div class="card-body">
-
-
         <% if (numTeammates > 0)	{%>
+
+              <% if (playerStatus == "Bench")
+                  {%>
+                    <%- include('benchFeatures'); %>
+                  <%}
+              %>
+
               <%-  include('teammateList'); %>
-              <br>
+
+              <hr>
               <form action="removePlayerFromTeam" method="post">
-
-                  <div class="form-group">
-                      <label>Enter 8-digit Player Code to Remove:</label>
-                      <input type="text" size="12" name="removePlayerCode" autocomplete="off">
-                  </div>
-
-                  <div class="form-group">
-                    <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-                    <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
-                  </div>
-
-                  <div class="form-group">
-                      <input type="submit" class="btn btn-info" value="Remove Player"/>
-                  </div>
+                  Enter 8-digit Player Code to Remove:
+                  <div style="height: 10px;"></div>
+                  <input type="text" size="12" name="removePlayerCode" autocomplete="off">
+                  <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+                  <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
+                  &nbsp<input type="submit" class="btn btn-info" value="Remove Player"/>
               </form>
+              <div style="height: 12px;"></div>
 
         <% } %>
 
+        <% if (numTeammates < 2)	{%>
 
-        <form action="addPlayer" method="post">
+            <form action="addPlayer" method="post">
+                Enter 8-digit Player Code to Add:
+                <div style="height: 10px;"></div>
+                <input type="text" size="12" name="addPlayerCode" autocomplete="off">
+                <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
+                <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+                &nbsp<input type="submit" class="btn btn-info" value="Add Player"/>
+            </form>
+            <div style="height: 7px;"></div>
 
-          <div class="form-group">
-              <label>Enter 8-digit Player Code to Add:</label>
-              <input type="text" size="12" name="enteredPlayerCode" autocomplete="off">
-          </div>
+      <% } %>
 
-          <div class="form-group">
-              <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
-              <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-          </div>
-
-          <div class="form-group">
-              <input type="submit" class="btn btn-info" value="Add Player"/>
-          </div>
-
-      </form>
-
-    </div>
-
+  </div>
 </div>
-<br>

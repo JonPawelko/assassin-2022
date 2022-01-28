@@ -6,75 +6,33 @@
 	<title>Assassin</title>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
 	<link rel="stylesheet" type="text/css" href="\stylesheets\custom.css">
+	<script src="javascripts/utilities.js"></script>
 </head>
-<body class="container" style="margin-top: 10px;">
 
-	<% if (messages.error) { %>
-	<div class="alert alert-danger" role="alert"><%- messages.error %></div>
-	<% } %>
+<body class="container" style="margin-top: 10px;" onload="defaultCursor();">
 
-	<h3>Welcome to Assassin!</h3>
-			<br>
+		<% if (messages.error) { %>
+		<div class="alert alert-danger" role="alert"><%- messages.error %></div>
+		<% } %>
 
-			<label>Name: </label> <%= playerName %>
-			<br>
+		<div class="card" style="width:21rem;">
 
-			<% 	switch(playerStatus)
-					{
-						  case "Live":
-										%>
-												Your status is Live.<br>
-										<%
-										break;
+		  <div class="card-header">
+				<div style="height: 3px;"></div>
+				<h5>Welcome to Assassin <%= playerName %>!</h5>
+		  </div>
 
-							case "Bench":
-										%>
+		  <div class="card-body">
 
-												Your status is Bench. If the Live Player on your team has been Live for at least 1 hour, you can go Live.<br>
-												<%- include('benchFeatures'); %>
-
-										<%
-
-										break;
-
-							case "Registered":
-										%>
-
-												Your status is Registered.<br>
-										<%
-										break;
-
-							case "Approved":
-										%>
-
-												Your status is Approved.<br>
-										<%
-										break;
-
-							case "Quit":
-										%>
-
-												Your status is Quit.<br>
-										<%
-										break;
-
-							default:
-						    // code block
-					}
-
-			%>
-
-			<br>
-
-			<% 	switch(teamStatus)
+					<% 	switch(teamStatus)
 					{
 							case "0":
-									%>You are not on a Team. You must either join a Team or create a new Team to play Assassin.
-										<br><br>
-
+									%><div style="height: 2px;"></div>
+											You must either join or create a Team to play Assassin.
+											<div style="height: 11px;"></div>
 											<%- include('joinTeamFeatures'); %>
-											or
-											<br><br>
+											-OR-
+											<div style="height: 12px;"></div>
 											<%- include('createTeamFeatures'); %>
 									<%
 									break;
@@ -88,7 +46,7 @@
 							case "Waiting":
 										%>
 
-												Your team status is Waiting. Your team will enter the game on the next major event.<br>
+												Your team status is Waiting.<br>Your individual status is <%= playerStatus %>.<br>Your team will enter the game on the next major event.<br>
 
 										<%
 										break;
@@ -96,42 +54,42 @@
 							case "Inactive":
 										%>
 
-												Your team status is Inactive.<br>
+												Your team status is Inactive.<br>Your individual status is <%= playerStatus %>.<br>
 										<%
 										break;
 
 							case "Break":
 										%>
 
-												Your team status is On Break.<br>
+												Your team status is On Break.<br>Your individual status is <%= playerStatus %>.<br>
 										<%
 										break;
 
 							case "Registered":
 										%>
 
-												Your team status is Registered.  You will move to Waiting when your pictures are approved and you have paid.<br>
+												Your team status is Registered.<br>Your individual status is <%= playerStatus %>.<br>Your Team will move to Waiting when your pictures are approved and you have paid.<br>
 										<%
 										break;
 
 							case "Pics Approved":
 										%>
 
-												Your team status is Pictures Approved.  You will move to Waiting when you have paid.<br>
+												Your team status is Pictures Approved.<br>Your individual status is <%= playerStatus %>.<br>Your Team will move to Waiting when you have paid.<br>
 										<%
 										break;
 
 							case "Paid":
 										%>
 
-												Your team status is Paid.  You will move to Waiting when your pictures have been approved.<br>
+												Your team status is Paid.<br>Your individual status is <%= playerStatus %>.<br>Your Team will move to Waiting when your pictures have been approved.<br>
 										<%
 										break;
 
 							case "Quit":
 										%>
 
-												Your team status is Quit.  You can register as a new Team.<br>
+												Your team status is Quit.<br>Your individual status is <%= playerStatus %>.  You can register as a new Team.<br>
 										<%
 										break;
 
@@ -139,81 +97,152 @@
 						    // code block
 					}
 
-			%>
+					%>
 
-<br>
+				</div>
 
-			<% if (captainFlag == 1) { %>
-				  <%- include('captainFeatures'); %>
-			<%} else { if (numTeammates > 0)	{%>
-				  <%-  include('teammateList'); %>
-			<% }} %>
+		</div>
 
-<br>
+		<div style="height: 2px;"></div>
 
-<div class="card">
+		<% if (captainFlag == 1) { %>
+				<%- include('captainFeatures'); %>
+		<%}
+		else
+		{%>
+				<% if (numTeammates > 0) { %>
+
+						<div class="card" style="width:21rem;">
+
+							<div class="card-header">
+								Teammate Details
+							</div>
+
+							<div class="card-body">
+
+									<%-  include('teammateList'); %>
+									<br>
+
+									<%
+										if (playerStatus == "Bench")
+										{%>
+												<%- include('benchFeatures'); %>
+										<%}%>
+
+							</div>
+
+					</div>
+
+				<%}%>
+
+		<%}%>
+
+<div style="height: 17px;"></div>
+
+<div class="card" style="width:21rem;">
 
   <div class="card-header">
     Your Player Data
+		<div style="height: 4px;"></div>
   </div>
 
   <div class="card-body">
 
-			<label>Player Code: </label> <%= playerCode %>
-			<br>
+			<div style="height: 5px;"></div>
 
-			<label>Email: </label> <%= playerEmail %>
-			<br>
+			Player Code:  <%= playerCode %>
+			<div style="height: 9px;"></div>
 
-			<label>Phone: </label> <%= playerPhone %>
-			<br>
+			Email:  <%= playerEmail %>
+			<div style="height: 9px;"></div>
 
-			<label>My Last Shift: </label> <%= myLastShiftTimeStamp %>
-			<br>
+			Phone:  <%= playerPhone %>
+			<div style="height: 9px;"></div>
 
-			<label>Your Team Name: </label> <%= playerTeamName %>
-			<br>
+			My Last Shift:  <%= myLastShiftTimeStamp %>
+			<div style="height: 9px;"></div>
 
-			<label>Team Code: </label> <%= playerTeamCode %>
-			<br>
+			Your Team Name:  <%= playerTeamName %>
+			<div style="height: 9px;"></div>
 
-			<label>Team Bounties Owed: </label> <%= teamBountiesOwed %>
-			<br>
+			Team Code:  <%= playerTeamCode %>
+			<div style="height: 9px;"></div>
 
-			<label>Total Team Bounties Earned: </label> <%= totalTeamBountiesEarned %>
-			<br><br>
+			Team Bounties Owed:  <%= teamBountiesOwed %>
+			<div style="height: 9px;"></div>
 
-			<label>Your Photo Status: </label> <%= playerPicStatus %>
-			<br>
+			Total Team Bounties Earned:  <%= totalTeamBountiesEarned %>
+			<div style="height: 9px;"></div>
 
-			<form action="viewMyPicture" method="post">
-				<div class="form-group">
-						<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-						<input type="hidden" name="playerPic" value="<%= playerPic %>">
-						<input type="submit" class="btn btn-info" value="View My Picture"/>
-				</div>
+			Your Photo Status:  <%= playerPicStatus %>
+			<div style="height: 12px;"></div>
+
+			<% 	if ((playerPicStatus == "Approved") || (playerPicStatus == "Uploaded")) { %>
+
+				<form action="managePicture" method="post">
+							<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+							<input type="hidden" name="playerPic" value="<%= playerPic %>">
+							<input type="hidden" name="picFeature" value="View">
+							<input type="submit" class="btn btn-info" value="View My Picture"/>
+							<div style="height: 15px;"></div>
+				</form>
+
+			<% } else {  // rejected pic %>
+
+				<form action="managePicture" method="post">
+							<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+							<input type="hidden" name="playerPic" value="<%= playerPic %>">
+							<input type="hidden" name="picFeature" value="Edit">
+							<input type="submit" class="btn btn-info" value="Upload New Picture"/>
+							<div style="height: 15px;"></div>
+				</form>
+
+			<%}%>
+
+			<% 	if ((playerPhone == "") || (playerPhone == null)) { %>
+
+				<form action="addPlayerPhoneNumber" method="post">
+							<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+							<input type="submit" class="btn btn-info" value="Add Phone Number"/>
+							<div style="height: 15px;"></div>
+				</form>
+
+			<% } else {%>
+
+				<form action="editPlayerPhoneNumber" method="post">
+							<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+							<input type="hidden" name="myPhoneNumber" value="<%= playerPhone %>">
+							<input type="submit" class="btn btn-info" value="Edit Phone Number"/>
+							<div style="height: 15px;"></div>
+				</form>
+
+				<form action="removePlayerPhoneNumber" onsubmit="return confirmChoice(<%= CONFIRM_REMOVE_PHONE %>)" method="post">
+							<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+							<input type="submit" class="btn btn-info" value="Remove Phone Number"/>
+							<div style="height: 15px;"></div>
+				</form>
+
+			<%}%>
+
+			<%- include('quitFeatures'); %>
+
+			<form action="assassinLogout" method="post">
+						<input type="submit" class="btn btn-info" value="Logout"/>
 			</form>
 
+			<div style="height: 8px;"></div>
+
+		</div>
+
 	</div>
 
-</div>
+	<div style="height: 22px;"></div>
 
-<br>
-<%- include('quitFeatures'); %>
-<br>
+	<%- include('gameStatistics'); %>
 
-<form action="assassinLogout" method="post">
-	<div class="form-group">
-			<input type="submit" class="btn btn-info" value="Logout"/>
-	</div>
-</form>
+	<div style="height: 15px;"></div>
 
-<br>
-<br>
-------------------------------------------------
-Start Admin Features
-
-<%- include('adminFeatures'); %>
+	<%- include('adminFeatures'); %>
 
 </body>
 </html>

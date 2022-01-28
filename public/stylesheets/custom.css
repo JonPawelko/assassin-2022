@@ -1,8 +1,17 @@
+
+hr
+{
+        border: 0;
+        height: .02em;
+        background-color: gray;
+}
+
 .card
 {
          border-color: black;
-         border-width: 1px;
-         width: 500px;
+         border-width: 1.5px;
+
+         /* width: 500px; */
 }
 
 .card-header
@@ -11,13 +20,29 @@
          border-color: black;
          border-width: 1px;
          font-weight: bold;
+         padding-top: 5px;
+         padding-bottom: 3px;
+         padding-left: 10px;
 }
+
+.card-body
+{
+         padding-top: 5px;
+         padding-left: 10px;
+         padding-bottom: 9px;
+}
+
 
 img {
   border: 1px solid black;
   border-radius: 2px;
   padding: 2px;
-  width: 350px;
+  width: 292px;
+}
+
+.btn
+{
+  color: white;
 }
 
 .link-button {
