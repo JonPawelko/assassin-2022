@@ -35,7 +35,7 @@ router.post('/assassinRegister', function(req, res, next) {
   {
       authorizationParams:
       {
-        screen_hint: 'signup'
+        screen_hint: 'signup'   // this will denote registration vs regular login
       }
   });
 
@@ -174,7 +174,7 @@ router.get('/', function(req, res, next) {
                                   myPersonalKillsDay: rowsStats[0][0].myPersonalKillsDay});
 
                               }
-                          });
+                          }); // end get_teammate_info rpc call
                       }
                       else // Player has no teammates, don't need to send Captain Name or Live Player (must be single player)
                       {
@@ -189,11 +189,11 @@ router.get('/', function(req, res, next) {
                           myLastShiftTimeStamp: tempMyLastShift,
                           playerTeamName: rows[0][0].playerTeamName,
                           playerTeamCode: rows[0][0].playerTeamCode,
-                          // playerTeammates: rows2[0],
+                          // playerTeammates: rows2[0], // don't need this, no teammates
                           numTeammates: rows[0][0].numTeammates,
                           captainFlag: rows[0][0].captainFlag,
-                          // teamCaptainName: rows[0][0].teamCaptainName,
-                          // teamLivePlayerName: rows[0][0].teamLivePlayerName,
+                          // teamCaptainName: rows[0][0].teamCaptainName, // don't need this, no teammates, player must be captain
+                          // teamLivePlayerName: rows[0][0].teamLivePlayerName, // don't need this, no teammates, player must be live
                           teamStatus: rows[0][0].teamStatus,
                           teamBountiesOwed: rows[0][0].teamBountiesOwed,
                           totalTeamBountiesEarned: rows[0][0].totalTeamBountiesEarned,
@@ -216,15 +216,15 @@ router.get('/', function(req, res, next) {
                           myPersonalKillsDay: rowsStats[0][0].myPersonalKillsDay});
                       } // end else, no teammates
 
-                  }
-              });
+                  }  // end else - Successful get_statistics RPC call
+
+              });  // end get_statistics rpc call
 
           } // end else Player exists
 
       } // end else successful get info
 
-  }); // end query
-
+  }); // end query get_player_info
 
 });  // end router root GET
 
@@ -334,6 +334,8 @@ router.post('/newAssassin', function(req, res, next)
                                 // Create Player worked, now upload photo
                                 console.log("update_photo_status_to_uploaded rpc worked");
 
+                                // need to check return code here zzz
+
                                 res.oidc.login();  // route Player back to Home
 
                             }
@@ -373,7 +375,7 @@ router.post('/activateAssassin', function(req, res, next)
 
   if (!validateCode(req.body.playerCode))
   {
-      console.log("Bad data found, routing to error page");
+      console.log("Bad playerCode data found, routing to error page");
 
       // Render error page, passing in error code
       res.render('errorMessagePage', {result: ERROR_INVALID_PLAYER_OR_TEAM_CODE_FORMAT});
@@ -386,18 +388,18 @@ router.post('/activateAssassin', function(req, res, next)
   {
       if(err)
       {
-          console.log("Error");
+          console.log("Error on activate_player rpc call");
           req.flash('error', err);
       } else
       {
           console.log("Successful activate player RPC call, now check return code.");
-          console.log(rows[0][0].result);
+          console.log(rows);
 
           // No alerts, only check result
-          if (rows[0][0].result != CALL_SUCCESS)
+          if (rows[0][0].phone != CALL_SUCCESS)
           {
               // Render error page, passing in error code
-              res.render('errorMessagePage', {result: rows[0][0].result});
+              res.render('errorMessagePage', {result: rows[0][0].phone});
               return;
           }
           else // success
@@ -467,7 +469,7 @@ router.post('/validateKill', function(req, res, next)
 
 
 // -----------------------------------------------------------
-// Captain only feature.  Needs lots more condition checking.
+// Captain only feature.
 //
 router.post('/rebuy', function(req, res, next)
 {
@@ -508,7 +510,7 @@ router.post('/rebuy', function(req, res, next)
             return;
           }
 
-} // end else
+      } // end else
 
   }); // end query
 
@@ -684,7 +686,7 @@ router.post('/takeBreak', function(req, res, next)
       return;
   }
 
-  // Call stored procedure
+  // Call stored procedure, passing in "Break"
   dbConn.query('CALL `assassin-demo1`.`leave_game`(?,?,?)', [req.body.myPlayerCode, req.body.myTeamCode, "Break"], function(err,rows)
   {
       if(err) {
@@ -778,7 +780,8 @@ router.post('/addPlayer', function(req, res, next)
       return;
   }
 
-  if (!validateCode(req.body.addPlayerCode))
+  // if (!validateCode(req.body.addPlayerCode))
+  if (!validateCode(req.body.playerCode))
   {
       console.log("Bad data found, routing to error page");
 
@@ -789,7 +792,7 @@ router.post('/addPlayer', function(req, res, next)
 
   // valid player code format
   // Call stored procedure
-  dbConn.query('CALL `assassin-demo1`.`add_player_to_team`(?,?,?)', [req.body.myPlayerCode,req.body.myTeamCode,req.body.addPlayerCode], function(err,rows)
+  dbConn.query('CALL `assassin-demo1`.`add_player_to_team`(?,?,?)', [req.body.myPlayerCode,req.body.myTeamCode,req.body.playerCode], function(err,rows)
   {
       if(err) {
           console.log("Error on add player");
@@ -834,7 +837,8 @@ router.post('/removePlayerFromTeam', function(req, res, next)
       return;
   }
 
-  if (!validateCode(req.body.removePlayerCode))
+  //if (!validateCode(req.body.removePlayerCode))
+  if (!validateCode(req.body.playerCode))
   {
       console.log("Bad data found, routing to error page");
 
@@ -845,7 +849,7 @@ router.post('/removePlayerFromTeam', function(req, res, next)
 
   // valid player code format
   // Call stored proc
-  dbConn.query('CALL `assassin-demo1`.`remove_player_from_team`(?,?,?)', [req.body.myPlayerCode,req.body.myTeamCode,req.body.removePlayerCode], function(err,rows)
+  dbConn.query('CALL `assassin-demo1`.`remove_player_from_team`(?,?,?)', [req.body.myPlayerCode,req.body.myTeamCode,req.body.playerCode], function(err,rows)
   {
       if(err) {
           console.log("Error on removePlayerFromTeam");
@@ -939,18 +943,15 @@ router.post('/managePicture', function(req, res, next)
   }
 
   console.log(req.body.playerPic);
-
   console.log(__dirname);
 
   var playerPicPath = "../../" + req.body.playerPic;
-
   console.log(playerPicPath);
 
   // No stored procedure needed, just load manage template
   res.render('managePicture', {playerCode: req.body.myPlayerCode, myPicture: playerPicPath, picFeature: req.body.picFeature});
 
 }); // end router post managePicture
-
 
 // -------------------------------------------------------------
 // adminShowCreatePrepsPage called by admin to start prep process
@@ -972,13 +973,14 @@ router.post('/adminShowCreatePrepsPage', function(req, res, next)
 
 });  // end router - adminShowCreatePrepsPage
 
-
 // --------------------------------------------------------------------------------------------------------
 // Route called by admin to create prep templates
 //
 router.post('/adminCreatePrepTemplateData', function(req, res, next)
 {
   console.log("Got into adminCreatePrepTemplateData");
+
+  var num1, num2, num3; // helper vars to make sure the inputs are ints
 
   // Check authentication status
   if (!req.oidc.isAuthenticated())
@@ -988,8 +990,21 @@ router.post('/adminCreatePrepTemplateData', function(req, res, next)
       return;
   }
 
+  // convert string to int
+  num1 = parseInt(req.body.num1PlayerTeams);
+  num2 = parseInt(req.body.num2PlayerTeams);
+  num3 = parseInt(req.body.num3PlayerTeams);
+
+  // Error checking on inputs
+  if (!Number.isInteger(num1) || !Number.isInteger(num2) || !Number.isInteger(num3) || (num1 < 0) || (num2 < 0) || (num3 < 0))
+  {
+      // Render error page, passing in error code
+      res.render('errorMessagePage', {result: ERROR_INVALID_PREP_INPUTS});
+      return;
+  }
+
   // Retrieve prepped player codes
-  dbConn.query('CALL `assassin-demo1`.`admin_create_prepped_teams`(?,?,?)', [req.body.num1PlayerTeams, req.body.num2PlayerTeams, req.body.num3PlayerTeams], function(err,rows)
+  dbConn.query('CALL `assassin-demo1`.`admin_create_prepped_teams`(?,?,?)', [num1, num2, num3], function(err,rows)
   {
       if(err)
       {
@@ -999,12 +1014,12 @@ router.post('/adminCreatePrepTemplateData', function(req, res, next)
       {
           console.log("Successful adminCreatePrepTemplateData RPC call.");
           console.log(rows);
-          res.oidc.login(); // route back to login - may need to check return code
+          res.oidc.login(); // route back to login - may need to check return code zzz
       } // end else successful call
 
   });  // end stored procedure call
 
-}); // end router post adminActivateTeamPrep
+}); // end router post adminCreatePrepTemplateData
 
 // --------------------------------------------------------------------------------------------------------
 // Route called to show Activate Team Template for admin
@@ -1089,18 +1104,20 @@ router.post('/adminActivateTeam', function(req, res, next)
         return;
     }
 
+    // Possibly check for valid inputs here, but already filtered at ui level
+
     // helper vars for uploading photo files
     let playerPhotoFile;
     let uploadPath;
 
     // var helper files to prevent trying to send blank data to Node
-    var p2Code = "";
+    var p2Code = 0;
     var p2Name = "";
     var p2Phone = "";
     var p2Photo = "";
     var p2Celeb = "";
 
-    var p3Code = "";
+    var p3Code = 0;
     var p3Name = "";
     var p3Phone = "";
     var p3Photo = "";
@@ -1136,20 +1153,29 @@ router.post('/adminActivateTeam', function(req, res, next)
     {
         if(err)
         {
-            console.log("Error on activate_team call.");
+            console.log("Error on admin_activate_team call.");
             req.flash('error', err);
         } else
         {
             // admin_activate_team worked
-            console.log("admin_activate_team worked, now upload photos.");
+            console.log("admin_activate_team rpc worked, check return code, upload photos.");
+            console.log(rows);
 
-            // Start with Captain
+            // check result, return if error
+            if (rows[0][0].phone != CALL_SUCCESS)
+            {
+                // Render error page, passing in error code
+                res.render('errorMessagePage', {result: parseInt(rows[0][0].phone)});
+                return;
+            }
+
+            // Start processing  Captain
             playerPhotoFile = req.files.captainPhotoFile;
             uploadPath = __dirname + '/../public/photos/' + playerPhotoFile.name;  // might want to clean up this directory logic
 
             console.log(uploadPath);
 
-            // Use mv() to place file on the server
+            // Use mv() to place file on the server - captain first
             playerPhotoFile.mv(uploadPath, function (err)
             {
                 if (err)
@@ -1215,17 +1241,18 @@ router.post('/adminActivateTeam', function(req, res, next)
                         });
 
                     } // end if file len > 1
-                    else {
+                    else
+                    {
                       res.oidc.login(); // route back to login
                     }
 
                 } // else first upload
 
-            });
+            });   // captain mv file end
 
         } // end first else create player worked, start uploads
 
-      });  // end stored procedure call
+    });  // end admin_activate_team stored procedure call
 
 }); // end post('/activateTeam')
 
@@ -1246,6 +1273,7 @@ router.post('/adminSearchForTeam', function(req, res, next)
 
     // var helper files to prevent trying to send blank data to Node
     var tempTeamCode = 0;
+    var tempPlayerCode = 0;
     var tempTeamName = "";
     var tempPlayerName = "";
 
@@ -1254,8 +1282,13 @@ router.post('/adminSearchForTeam', function(req, res, next)
         tempTeamCode = req.body.teamCode;
     }
 
+    if (req.body.playerCode != "")
+    {
+        tempPlayerCode = req.body.playerCode;
+    }
+
     // Call stored procedure to search for the team
-    dbConn.query('CALL `assassin-demo1`.`admin_search_for_team`(?,?,?)', [req.body.teamName, req.body.playerName, tempTeamCode], function(err,rows)
+    dbConn.query('CALL `assassin-demo1`.`admin_search_for_team`(?,?,?,?)', [req.body.teamName, req.body.playerName, tempTeamCode, tempPlayerCode], function(err,rows)
     {
         if(err)
         {
@@ -1267,7 +1300,7 @@ router.post('/adminSearchForTeam', function(req, res, next)
             console.log("search_for_team successful rpc call.");
 
             // Check results, if only 1 Team, go directly to that edit Team page, otherwise show list of matching teams and let Admin pick
-            console.log(rows[0].length);
+            console.log(rows);
 
             if (rows[0].length == 1)
             {
@@ -1331,6 +1364,7 @@ router.post('/adminSearchForPlayer', function(req, res, next)
     var tempTeamName = "";
     var tempPlayerName = "";
     var tempPlayerCode = 0;
+    var tempTeamCode = 0;
     var playerPicPath;
 
     if (req.body.teamName != "")
@@ -1348,8 +1382,13 @@ router.post('/adminSearchForPlayer', function(req, res, next)
         tempPlayerCode = req.body.playerCode;
     }
 
+    if (req.body.teamCode != "")
+    {
+        tempTeamCode = req.body.teamCode;
+    }
+    
     // Call stored procedure to search for the player
-    dbConn.query('CALL `assassin-demo1`.`admin_search_for_player`(?,?,?)', [tempTeamName, tempPlayerName, tempPlayerCode], function(err,rows)
+    dbConn.query('CALL `assassin-demo1`.`admin_search_for_player`(?,?,?,?)', [tempTeamName, tempPlayerName, tempPlayerCode, tempTeamCode], function(err,rows)
     {
         if(err)
         {
@@ -1396,7 +1435,6 @@ router.post('/adminSearchForPlayer', function(req, res, next)
                     {
                         players: rows[0]
                     });
-
                 }
                 else
                 {
@@ -1440,12 +1478,25 @@ router.post('/adminApprovePicture', function(req, res, next)
             // adminApprovePicture worked
             console.log("adminApprovePicture successful rpc call.");
 
-            // check for alerts here - possible move to Waiting
+            if (rows[0][0].phone == CALL_SUCCESS)
+            {
+                  if (rows[0].length > 1)
+                  {
+                      send_text_alerts(rows);
+                  }
 
-            if (req.body.oneOrMorePhotos == "One")
-              res.oidc.login();
+                  // If part of bulk approval, keep checking, otherwise route back home
+                  if (req.body.oneOrMorePhotos == "One")
+                    res.oidc.login();
+                  else
+                    checkForUploadedPhotos(res);
+            }
             else
-              checkForUploadedPhotos(res);
+            {
+              // Render error page, passing in error code
+              res.render('errorMessagePage', {result: parseInt(rows[0][0].phone)});
+              return;
+            }
 
         } // end else
 
@@ -1488,6 +1539,7 @@ router.post('/adminRejectPicture', function(req, res, next)
                       send_text_alerts(rows);
                   }
 
+                  // If part of bulk approval, keep checking, otherwise route back home
                   if (req.body.oneOrMorePhotos == "One")
                     res.oidc.login();
                   else
@@ -1532,9 +1584,6 @@ router.post('/adminChoosePhoto', function(req, res, next)
 router.post('/uploadPhoto', function(req, res, next)
 {
     console.log("Got into uploadPhoto call");
-    console.log(req.body.playerCode);
-    console.log(req.files.playerPhotoFile.name);
-    console.log(req.body.userType);
 
     // Check authentication status
     if (!req.oidc.isAuthenticated())
@@ -1623,7 +1672,7 @@ router.post('/adminPayBounties', function(req, res, next)
       return;
   }
 
-  // Call stored procedure to create the player
+  // Call stored procedure to pay bounties
   dbConn.query('CALL `assassin-demo1`.`admin_pay_bounties`(?,?)', [req.body.teamCode, req.body.numBounties], function(err,rows)
   {
       if(err)
@@ -1679,7 +1728,6 @@ router.post('/adminMarkPaid', function(req, res, next)
           // adminMarkPaid worked
           console.log("adminMarkPaid rpc worked.");
           console.log(rows);
-          console.log(rows[0].length);
 
           if (rows[0][0].phone == CALL_SUCCESS)
           {
@@ -1757,7 +1805,7 @@ router.post('/adminMarkPaidAndApprovePhoto', function(req, res, next)
                             {
                                 send_text_alerts(rows);
                             }
-                            res.oidc.login(); // send back home to refresh page, may now be on a new Team
+                            res.oidc.login(); // send back home to refresh page
                       }
                       else
                       {
@@ -1843,6 +1891,9 @@ router.post('/adminUpdatePlayerData', function(req, res, next)
           req.flash('error', err);
       } else {
           console.log("Successful update_player_data RPC call.");
+
+          // should check return code here zzz
+
           console.log(rows);
           res.oidc.login(); // send back home to refresh page
       } // end else
@@ -1876,6 +1927,9 @@ router.post('/adminUpdateTeamName', function(req, res, next)
       } else {
           console.log("Successful admin_update_team_name RPC call.");
           console.log(rows);
+
+          //  should check return code here
+
           res.oidc.login(); // send back home to refresh page
       } // end else
 
@@ -2068,6 +2122,9 @@ router.post('/adminDropBomb', function(req, res, next)
           // adminDropBomb worked
           console.log("adminDropBomb rpc worked.");
           console.log(rows);
+
+          // check return code here zzz
+
           if (rows[0].length > 1)
           {
               send_text_alerts(rows);
@@ -2101,7 +2158,7 @@ router.post('/systemCheckForceShiftChange', function(req, res, next)
       return;
   }
 
-  // Call stored procedure to create the player
+  // Call stored procedure check_for_forced_shift_changes
   dbConn.query('CALL `assassin-demo1`.`system_check_for_forced_shift_changes`(?)', req.body.hoursToGo, function(err,rows)
   {
       if(err)
@@ -2174,7 +2231,6 @@ router.post('/resetDatabase', function(req, res, next)
 router.post('/test', function(req, res, next)
 {
   console.log("Got into new test call");
-  //console.log("Got into new test call - player number is " + req.body.testCode);
 
 }); // end test
 

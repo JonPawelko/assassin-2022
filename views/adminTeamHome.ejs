@@ -34,8 +34,8 @@
 
 					<form autocomplete="off" action="adminPayBounties" method="post" encType="multipart/form-data">
 	            <input type="hidden" name="teamCode" value="<%= teamCode %>">
-              Pay Bounties: <input type="search" size="4" name="numBounties" value="" autocomplete="off">
-              &nbsp<input type="submit" class="btn btn-info" value="Pay"/>
+              Pay Bounties: &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<input type="search" size="2" name="numBounties" value="<%= bountiesOwed %>" autocomplete="off">
+              &nbsp&nbsp<input type="submit" class="btn btn-info" value="Pay"/>
 							<div style="height: 14px;"></div>
 	        </form>
 
@@ -46,7 +46,7 @@
 					<form autocomplete="off" action="adminMarkPaid" method="post" encType="multipart/form-data">
 							<input type="hidden" name="teamCode" value="<%= teamCode %>">
 							<input type="submit" class="btn btn-info" value="Mark Paid"/>
-							<div style="height: 14px;"></div>
+							<div style="height: 16px;"></div>
 					</form>
 
 				<% } %>
@@ -56,7 +56,7 @@
 								New Team Name: <input type="search" size="12" name="teamName" value="" autocomplete="off">
 								<div style="height: 16px;"></div>
 								<input type="submit" class="btn btn-info" value="Update Team Name"/>
-								<div style="height: 14px;"></div>
+								<div style="height: 16px;"></div>
 				</form>
 
 				<form autocomplete="off" action="assassinLogin" method="post" encType="multipart/form-data">

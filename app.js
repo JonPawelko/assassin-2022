@@ -54,6 +54,7 @@ global.EVENT_GAME_END = 18;
 global.EVENT_PAID_BOUNTY = 19;
 global.EVENT_MOVED_TO_WAITING = 20;
 global.EVENT_MARK_TEAM_PAID = 21;
+global.EVENT_MARK_TEAM_ACTIVATED = 22;
 
 // Global Return Code constants
 global.CALL_SUCCESS = 1;
@@ -86,7 +87,7 @@ global.ERROR_INVALID_TEAM_NAME = 122;
 global.ERROR_INVALID_PHONE_NUMBER = 123;
 global.ERROR_INVALID_BOUNTY_PAYOUT = 124;
 global.ERROR_INVALID_HOURS_TO_GO = 125;
-
+global.ERROR_INVALID_PREP_INPUTS = 126;
 
 const { auth } = require('express-openid-connect');
 

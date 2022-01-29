@@ -112,6 +112,8 @@
 		{%>
 				<% if (numTeammates > 0) { %>
 
+						<div style="height: 14px;"></div>
+
 						<div class="card" style="width:21rem;">
 
 							<div class="card-header">
@@ -120,8 +122,9 @@
 
 							<div class="card-body">
 
+									<div style="height: 6px;"></div>
 									<%-  include('teammateList'); %>
-									<br>
+									<div style="height: 10px;"></div>
 
 									<%
 										if (playerStatus == "Bench")
@@ -224,10 +227,13 @@
 
 			<%}%>
 
-			<%- include('quitFeatures'); %>
-
-			<form action="assassinLogout" method="post">
-						<input type="submit" class="btn btn-info" value="Logout"/>
+			<!-- <%- include('quitFeatures'); %> -->
+			<form action="quitGame" onsubmit="return confirmChoice(<%= CONFIRM_QUIT %>)" method="post">
+			    <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+			    <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
+			    <input type="submit" class="btn btn-info" value="Quit Game"/>
+					&nbsp&nbsp&nbsp
+					<input type="submit" class="btn btn-info" formaction="assassinLogout" value="Logout"/>
 			</form>
 
 			<div style="height: 8px;"></div>

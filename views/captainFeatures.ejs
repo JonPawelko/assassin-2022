@@ -23,7 +23,7 @@
                               <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
                               <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
                               <input type="submit" class="btn btn-info" value="Take a Break"/>
-                              <div style="height: 14px;"></div>
+                              <div style="height: 16px;"></div>
                           </form>
   										<%
   										break;
@@ -34,7 +34,7 @@
                               <input type="hidden" name="playerCode" value="<%= playerCode %>">
                               <input type="hidden" name="teamCode" value="<%= playerTeamCode %>">
                               <input type="submit" class="btn btn-info" value="Return From Break"/>
-                              <div style="height: 14px;"></div>
+                              <div style="height: 16px;"></div>
                           </form>
 
   										<%
@@ -50,7 +50,7 @@
                                 <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
                                 <input type="submit" class="btn btn-info" value="Rebuy"/>
                             </form>
-                            <div style="height: 14px;"></div>
+                            <div style="height: 16px;"></div>
                       <%}
                         break;
 
@@ -59,6 +59,7 @@
   					}
 
   			%>
+
 
         <% if (numTeammates > 0)	{%>
 
@@ -72,30 +73,49 @@
 
               <hr>
               <form action="removePlayerFromTeam" method="post">
-                  Enter 8-digit Player Code to Remove:
-                  <div style="height: 10px;"></div>
-                  <input type="text" size="12" name="removePlayerCode" autocomplete="off">
+
+                <% if (numTeammates < 2)
+                {%>
+                    8-digit Player Code to add or remove:
+              <%}
+                else
+                {%>
+                    8-digit Player Code to remove:
+              <%}%>
+
+                  <div style="height: 12px;"></div>
+                  <input type="text" size="7" name="playerCode" autocomplete="off">
+                  &nbsp&nbsp&nbsp
                   <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
                   <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
-                  &nbsp<input type="submit" class="btn btn-info" value="Remove Player"/>
+                  <input type="submit" class="btn btn-info" value="Remove"/>
+                  &nbsp&nbsp&nbsp
+
+                  <% if (numTeammates < 2)	{%>
+
+                      <input type="submit" class="btn btn-info" formaction="addPlayer" value="Add"/>
+
+                  <%}%>
+
               </form>
               <div style="height: 12px;"></div>
 
         <% } %>
 
-        <% if (numTeammates < 2)	{%>
+        <% if (numTeammates == 0)
+        {%>
 
             <form action="addPlayer" method="post">
-                Enter 8-digit Player Code to Add:
+                Enter 8-digit Player Code to add:
                 <div style="height: 10px;"></div>
-                <input type="text" size="12" name="addPlayerCode" autocomplete="off">
+                <input type="text" size="7" name="playerCode" autocomplete="off">
                 <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
                 <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-                &nbsp<input type="submit" class="btn btn-info" value="Add Player"/>
+                &nbsp&nbsp&nbsp<input type="submit" class="btn btn-info" value="Add"/>
             </form>
             <div style="height: 7px;"></div>
 
-      <% } %>
+      <%}%>
 
   </div>
 </div>

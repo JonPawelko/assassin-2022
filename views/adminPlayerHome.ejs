@@ -42,14 +42,14 @@
 						Player Phone:&nbsp<%= playerPhone %>
 						<div style="height: 9px;"></div>
             Photo Status:&nbsp<%= photoStatus %>
-						<div style="height: 12px;"></div>
+						<div style="height: 15px;"></div>
 
             <form>
             <img src=<%=playerPhoto%>
              loading="lazy">
             </form>
 
-						<div style="height: 18px;"></div>
+						<div style="height: 20px;"></div>
 
 						<% if ((photoStatus == "Uploaded") || (photoStatus == "Rejected"))
 						{ %>
@@ -110,11 +110,8 @@
 								<input type="hidden" name="celebritarian" value="<%= celebritarian %>">
 								<input type="hidden" name="playerPhone" value="<%= playerPhone %>">
 	              <input type="submit" class="btn btn-info" value="Edit Player Data"/>
-								<div style="height: 14px;"></div>
-            </form>
-
-						<form autocomplete="off" action="assassinLogin" method="post" encType="multipart/form-data">
-								<input type="submit" class="btn btn-info" value="Home"/>
+								&nbsp&nbsp&nbsp&nbsp
+            		<input type="submit" class="btn btn-info" formaction="assassinLogin" value="Home"/>
 								<div style="height: 6px;"></div>
 						</form>
 
