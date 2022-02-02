@@ -28,7 +28,7 @@
       }
       else
       {
-        listText = listText + teammate['player-name'] + " ";
+        listText = listText + teammate['player-name'];
         if (i++ != playerTeammates.length)
           listText = listText + " and ";
       }
@@ -39,12 +39,12 @@
 }%>
 
 <%= listText %>
-<div style="height: 8px;"></div>
+<div style="height: 4px;"></div>
 <%
 if (captainFlag != 1)
 {%>
       Your Team Captain is <%= teamCaptainName %>.
-      <br>
+      <div style="height: 6px;"></div>
 <%}%>
 
 Your Team's Live Player is <%= teamLivePlayerName %>.

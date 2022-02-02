@@ -1,12 +1,13 @@
 // All Routes defined here.  Router exported at bottom.
 //
 // import { clone, cloneDeep } from "lodash"
-
 // var _ = require('lodash'); // Load the full build - used for deep array copy - didn't work, uninstalled for now
 var express = require('express');
 const fileUpload = require('express-fileupload');
 var router = express.Router();
 var dbConn  = require('../lib/db');   // database object
+const cron = require('node-cron');
+var myapp = require('../app');
 
 // -------------------------------------------------------------
 // Export the router
@@ -60,7 +61,8 @@ router.post('/assassinLogout', function(req, res, next)
 router.get('/', function(req, res, next) {
 
   console.log("Root called");
-  var tempMyLastShift;  // helper for null last shifts
+  var tempMyLastShift;  // helper for null last shifts and formatting
+  var tempTeamLastShift;  // helper for null last shifts and formatting
 
   // Check authentication status
   if (!req.oidc.isAuthenticated())
@@ -73,15 +75,16 @@ router.get('/', function(req, res, next) {
   console.log("User Authenticated - Email in Root index is " + req.oidc.user.email);
 
   // Retrieve User info passing in email
-  dbConn.query('CALL `assassin-demo1`.`get_player_info`(?)', req.oidc.user.email, function(err,rows)
+  dbConn.query('CALL `assassin-demo1`.`get_player_info_and_game_status`(?)', req.oidc.user.email, function(err,rows)
   {
       if(err)
       {
-          console.log("Error on get_player_info call.");
+          console.log("Error on get_player_info_and_game_status call.");
           req.flash('error', err);
       } else
       {
           console.log("Successful Get Info RPC call.");
+          console.log("Game status is " + rows[0][0].gameStatus);
           console.log(rows);
 
           // Check to see if Player exists in the database already, if not, redirect to landing2
@@ -116,6 +119,15 @@ router.get('/', function(req, res, next) {
                         tempMyLastShift = "";
                       }
 
+                      if (rows[0][0].teamCurrentShiftStart != null)
+                      {
+                        tempTeamLastShift = formatDate(rows[0][0].teamCurrentShiftStart);
+                      }
+                      else
+                      {
+                        tempTeamLastShift = "";
+                      }
+
                       console.log("Last shift is " + tempMyLastShift);
                       console.log("Numteammates is " + rows[0][0].numTeammates);
 
@@ -137,6 +149,7 @@ router.get('/', function(req, res, next) {
 
                                   // route to home page passing Player info and teammate info
                                   res.render('home', {
+                                  gameStatus: rows[0][0].gameStatus,
                                   playerCode: rows[0][0].playerCode,
                                   playerName: rows[0][0].playerName,
                                   playerStatus: rows[0][0].playerStatus,
@@ -155,6 +168,7 @@ router.get('/', function(req, res, next) {
                                   teamStatus: rows[0][0].teamStatus,
                                   teamBountiesOwed: rows[0][0].teamBountiesOwed,
                                   totalTeamBountiesEarned: rows[0][0].totalTeamBountiesEarned,
+                                  teamCurrentShiftStart: tempTeamLastShift,
                                   targetTeamName: rows[0][0].targetTeamName,
                                   targetName: rows[0][0].targetName,
                                   targetPic: rows[0][0].targetPic,
@@ -176,9 +190,10 @@ router.get('/', function(req, res, next) {
                               }
                           }); // end get_teammate_info rpc call
                       }
-                      else // Player has no teammates, don't need to send Captain Name or Live Player (must be single player)
+                      else // Player has no teammates, don't need to send data that defaults to the Captain
                       {
                           res.render('home', {
+                          gameStatus: rows[0][0].gameStatus,
                           playerCode: rows[0][0].playerCode,
                           playerName: rows[0][0].playerName,
                           playerStatus: rows[0][0].playerStatus,
@@ -197,6 +212,7 @@ router.get('/', function(req, res, next) {
                           teamStatus: rows[0][0].teamStatus,
                           teamBountiesOwed: rows[0][0].teamBountiesOwed,
                           totalTeamBountiesEarned: rows[0][0].totalTeamBountiesEarned,
+                          // teamCurrentShiftStart: tempTeamLastShift,
                           targetTeamName: rows[0][0].targetTeamName,
                           targetName: rows[0][0].targetName,
                           targetPic: rows[0][0].targetPic,
@@ -686,8 +702,8 @@ router.post('/takeBreak', function(req, res, next)
       return;
   }
 
-  // Call stored procedure, passing in "Break"
-  dbConn.query('CALL `assassin-demo1`.`leave_game`(?,?,?)', [req.body.myPlayerCode, req.body.myTeamCode, "Break"], function(err,rows)
+  // Call stored procedure, passing in LEAVE_BREAK
+  dbConn.query('CALL `assassin-demo1`.`leave_game`(?,?,?)', [req.body.myPlayerCode, req.body.myTeamCode, LEAVE_BREAK], function(err,rows)
   {
       if(err) {
           console.log("Error on take break");
@@ -896,8 +912,8 @@ router.post('/quitGame', function(req, res, next)
       return;
   }
 
-  // leave_game stored proc handles both Quit and Break, send in the right flag
-  dbConn.query('CALL `assassin-demo1`.`leave_game`(?,?,?)', [req.body.myPlayerCode, req.body.myTeamCode, "Quit"], function(err,rows)
+  // leave_game stored proc handles both Quit and Break, send in quit here
+  dbConn.query('CALL `assassin-demo1`.`leave_game`(?,?,?)', [req.body.myPlayerCode, req.body.myTeamCode, LEAVE_QUIT], function(err,rows)
   {
       if(err) {
           console.log("Error on quitGame");
@@ -1038,7 +1054,14 @@ router.post('/adminActivateTeamPrep', function(req, res, next)
       return;
   }
 
-  console.log(req.body.teamCode);
+  if (!validateCode(req.body.teamCode))
+  {
+      console.log("Bad team code data found, routing to error page");
+
+      // Render error page, passing in error code
+      res.render('errorMessagePage', {result: ERROR_INVALID_PLAYER_OR_TEAM_CODE_FORMAT});
+      return;
+  }
 
   tempTeamCode = req.body.teamCode;
 
@@ -1053,6 +1076,13 @@ router.post('/adminActivateTeamPrep', function(req, res, next)
       {
           console.log("Successful get_prepped_team_player_codes RPC call.");
           console.log(rows);
+
+          if (rows[0].length == 0)
+          {
+            // Render error page, passing in error code
+            res.render('errorMessagePage', {result: ERROR_TEAM_NOT_FOUND_OR_QUIT});
+            return;
+          }
 
           if (rows[0].length == 3)
           {
@@ -1386,7 +1416,7 @@ router.post('/adminSearchForPlayer', function(req, res, next)
     {
         tempTeamCode = req.body.teamCode;
     }
-    
+
     // Call stored procedure to search for the player
     dbConn.query('CALL `assassin-demo1`.`admin_search_for_player`(?,?,?,?)', [tempTeamName, tempPlayerName, tempPlayerCode, tempTeamCode], function(err,rows)
     {
@@ -1486,7 +1516,7 @@ router.post('/adminApprovePicture', function(req, res, next)
                   }
 
                   // If part of bulk approval, keep checking, otherwise route back home
-                  if (req.body.oneOrMorePhotos == "One")
+                  if (req.body.oneOrMorePhotos == ONE_PHOTO)
                     res.oidc.login();
                   else
                     checkForUploadedPhotos(res);
@@ -1540,7 +1570,7 @@ router.post('/adminRejectPicture', function(req, res, next)
                   }
 
                   // If part of bulk approval, keep checking, otherwise route back home
-                  if (req.body.oneOrMorePhotos == "One")
+                  if (req.body.oneOrMorePhotos == ONE_PHOTO)
                     res.oidc.login();
                   else
                     checkForUploadedPhotos(res);
@@ -1854,7 +1884,7 @@ router.post('/adminEditPlayerData', function(req, res, next)
 //
 router.post('/adminUpdatePlayerData', function(req, res, next)
 {
-  var tempCeleb = "off";  // req.body.celebritarian is being passed in as undefined when unchecked
+  var tempCeleb = CHECKBOX_OFF;  // req.body.celebritarian is being passed in as undefined when unchecked
 
   // helper var to check and format phone number
   var tempPlayerPhone;
@@ -1869,8 +1899,8 @@ router.post('/adminUpdatePlayerData', function(req, res, next)
       return;
   }
 
-  if (req.body.celebritarian == "on")
-    tempCeleb = "on";
+  if (req.body.celebritarian == CHECKBOX_ON)
+    tempCeleb = CHECKBOX_ON;
 
   tempPlayerPhone = validatePhone(req.body.playerPhone); // comes back formatted
 
@@ -2371,15 +2401,15 @@ function checkForUploadedPhotos(res)
       {
           // bulk picture approve worked
           console.log("bulk picture approve rpc worked.");
-          console.log(rows);
-          console.log(rows[0][0].numUploadedPhotos);
-          console.log(rows[0][0].playerCode);
-          console.log(rows[0][0].photoFilename);
+          // console.log(rows);
+          // console.log(rows[0][0].numUploadedPhotos);
+          // console.log(rows[0][0].playerCode);
+          // console.log(rows[0][0].photoFilename);
 
           if (rows[0][0].numUploadedPhotos > 0)
           {
             console.log("At least 1 photo to review.")
-            res.render('adminBulkPictureApprove', {playerCode: rows[0][0].playerCode, photoFilename: rows[0][0].photoFilename});
+            res.render('adminBulkPictureApprove', {playerCode: rows[0][0].playerCode, playerName: rows[0][0].playerName, photoFilename: rows[0][0].photoFilename});
           }
           else
           {
@@ -2472,3 +2502,687 @@ function formatDate(inDate)
   return date_string;
 
 }
+// ---------------------------------------------
+// ------------- Start Cron Section ------------
+// ---------------------------------------------
+//
+router.post('/cronManager', function(req, res, next)
+{
+    console.log("Got into new cron manager route call");
+
+    var gameStartTime;
+    var gameEndTime;
+    var morningStartTime;
+    var nightEndTime;
+
+    // Call stored procedure to get game settings
+    dbConn.query('CALL `assassin-demo1`.`system_get_game_settings_for_cron`()', function(err,rows)
+    {
+        if(err)
+        {
+            console.log("Error on system_get_game_settings_for_cron call.");
+            req.flash('error', err);
+        } else
+        {
+            // system_get_game_settings_for_cron worked
+            console.log("system_get_game_settings_for_cron rpc worked.");
+            console.log(rows);
+
+            for (i=0; i<rows[0].length; i++)
+            {
+                switch(rows[0][i].key) {
+                  case "game-start-time":
+                    console.log("Game start time: " + rows[0][i].value);
+                    gameStartTime = rows[0][i].value;
+                    break;
+                  case "game-end-time":
+                    console.log("Game end time: " + rows[0][i].value);
+                    gameEndTime = rows[0][i].value;
+                    break;
+                  case "morning-start-time":
+                    console.log("Morning start time: " + rows[0][i].value);
+                    morningStartTime = rows[0][i].value;
+                    break;
+                  case "night-end-time":
+                    console.log("Night end time: " + rows[0][i].value);
+                    nightEndTime = rows[0][i].value;
+                    break;
+
+                  default:
+
+                } // end switch
+
+            } // end for loop
+
+            res.render('cronScheduler',
+                {
+                  gameStartCronScript: CRON_START_GAME_SCRIPT_RUNNING,
+                  gameEndCronScript: CRON_END_GAME_SCRIPT_RUNNING,
+                  morningStartCronScript: CRON_MORNING_START_SCRIPT_RUNNING,
+                  nightEndCronScript: CRON_NIGHT_END_SCRIPT_RUNNING,
+                  twoHoursToGoCronScript: CRON_2_HOURS_TO_TO_SCRIPT_RUNNING,
+                  oneHourToGoCronScript: CRON_1_HOUR_TO_GO_SCRIPT_RUNNING,
+                  checkHowManyPhotosCronScript: CRON_CHECK_MANY_PHOTOS_SCRIPT_RUNNING,
+                  checkOldPhotosCronScript: CRON_CHECK_OLD_PHOTOS_SCRIPT_RUNNING,
+                  gameStart: gameStartTime,
+                  gameEnd: gameEndTime,
+                  morningStart: morningStartTime,
+                  nightEnd: nightEndTime
+                });
+
+            return;
+
+        } // end else
+
+    }); // end query
+
+}); // end test
+
+// ---------------------------------------------
+//
+router.post('/systemStartCronScripts', function(req, res, next)
+{
+    console.log("Got into systemStartCronScripts route call");
+
+    var gameStartTime;
+    var gameEndTime;
+    var morningStartTime;
+    var nightEndTime;
+
+    // console.log("Start Game Checkbox: " + req.body.startGameCheckbox);
+    // console.log("Start Game Timestamp: " + req.body.startGameTimestamp);
+
+    // ------------------------------------
+    if (req.body.startGameCheckbox == "on")
+    {
+      console.log("startGameCheckbox is on");
+      console.log("Start Game Timestamp: " + req.body.startGameTimestamp);
+
+      // parse start date into cron scheduler format
+      var tempDate = new Date(req.body.startGameTimestamp);
+
+      var minute = tempDate.getMinutes();
+      var hour = tempDate.getHours();
+      var day = tempDate.getDate();
+      var month = tempDate.getMonth()+1;
+
+      var cronString = minute + " " + hour + " " + day + " " + month + " *";
+
+      console.log("Final cron string is " + cronString);
+
+      if (CRON_START_GAME_SCRIPT_RUNNING == 0)
+      {
+        CRON_START_GAME_SCRIPT_RUNNING = 1;
+        req.app.locals.startGameCronScript = cron.schedule(cronString, startGameCronFunction);
+        // req.app.locals.startGameCronScript = cron.schedule('*/10 * * * * *', startGameCronFunction);
+      }
+
+    }
+
+    // ------------------------------------
+    if (req.body.endGameCheckbox == "on")
+    {
+      console.log("endGameCheckbox is on");
+
+      // parse start date into cron scheduler format
+      var tempDate = new Date(req.body.endGameTimestamp);
+
+      var minute = tempDate.getMinutes();
+      var hour = tempDate.getHours();
+      var day = tempDate.getDate();
+      var month = tempDate.getMonth()+1;
+
+      var cronString = minute + " " + hour + " " + day + " " + month + " *";
+
+      console.log("Final cron string is " + cronString);
+
+      if (CRON_END_GAME_SCRIPT_RUNNING == 0)
+      {
+        CRON_END_GAME_SCRIPT_RUNNING = 1;
+        req.app.locals.endGameCronScript = cron.schedule(cronString, endGameCronFunction);
+      }
+
+    }
+
+    // ------------------------------------
+    if (req.body.morningStartCheckbox == "on")
+    {
+      console.log("morningStartCheckbox is on");
+
+      var tempDate = new Date(req.body.startGameTimestamp);
+      var hour = req.body.morningStartTime;
+      var day = (tempDate.getDate()+1) + "-" + (tempDate.getDate()+3);  // mornings June 23 - 25
+      var month = tempDate.getMonth()+1;
+
+      var cronString = "*" + " " + hour + " " + day + " " + month + " *";
+
+      console.log("Final cron string is " + cronString);
+
+      if (CRON_MORNING_START_SCRIPT_RUNNING == 0)
+      {
+        CRON_MORNING_START_SCRIPT_RUNNING = 1;
+        //req.app.locals.morningStartCronScript = cron.schedule('55 18 28-31 1 *', morningStartCronFunction);
+        req.app.locals.morningStartCronScript = cron.schedule(cronString, morningStartCronFunction);
+      }
+
+    }
+
+    // ------------------------------------
+    if (req.body.nightEndCheckbox == "on")
+    {
+      console.log("nightEndCheckbox is on");
+
+      var tempDate = new Date(req.body.startGameTimestamp);
+      var hour = req.body.nightEndTime;
+      var day = (tempDate.getDate()) + "-" + (tempDate.getDate()+2);  // nights 22 - 24
+      var month = tempDate.getMonth()+1;
+
+      var cronString = "*" + " " + hour + " " + day + " " + month + " *";
+
+      console.log("Final cron string is " + cronString);
+
+      if (CRON_NIGHT_END_SCRIPT_RUNNING == 0)
+      {
+        CRON_NIGHT_END_SCRIPT_RUNNING = 1;
+        // req.app.locals.nightEndCronScript = cron.schedule('55 18 28-31 1 *', nightEndCronFunction);
+        req.app.locals.nightEndCronScript = cron.schedule(cronString, nightEndCronFunction);
+      }
+
+    }
+
+    // ------------------------------------
+    if (req.body.twoHoursToGoCheckbox == "on")
+    {
+      console.log("twoHoursToGoCheckbox is on");
+
+      var tempDate = new Date(req.body.startGameTimestamp);
+      var hour = req.body.nightEndTime - 2;
+      var day = (tempDate.getDate()) + "-" + (tempDate.getDate()+3);  // nights 22 - 25
+      var month = tempDate.getMonth()+1;
+
+      var cronString = "*" + " " + hour + " " + day + " " + month + " *";
+
+      console.log("Final cron string is " + cronString);
+
+      if (CRON_2_HOURS_TO_TO_SCRIPT_RUNNING == 0)
+      {
+          CRON_2_HOURS_TO_TO_SCRIPT_RUNNING = 1;
+          req.app.locals.twoHoursToGoCronScript = cron.schedule(cronString, twoHoursToGoCronFunction);
+          //req.app.locals.twoHoursToGoCronScript = cron.schedule("47 10 1 2 *", twoHoursToGoCronFunction);
+      }
+
+    }
+
+    // ------------------------------------
+    if (req.body.oneHourToGoCheckbox == "on")
+    {
+      console.log("oneHourToGoCheckbox is on");
+
+      var tempDate = new Date(req.body.startGameTimestamp);
+      var hour = req.body.nightEndTime - 1;
+      var day = (tempDate.getDate()) + "-" + (tempDate.getDate()+3);  // nights 22 - 25
+      var month = tempDate.getMonth()+1;
+
+      var cronString = "*" + " " + hour + " " + day + " " + month + " *";
+
+      console.log("Final cron string is " + cronString);
+
+      if (CRON_1_HOUR_TO_GO_SCRIPT_RUNNING == 0)
+      {
+          CRON_1_HOUR_TO_GO_SCRIPT_RUNNING = 1;
+          req.app.locals.oneHourToGoCronScript = cron.schedule(cronString, oneHourToGoCronFunction);
+          // req.app.locals.oneHourToGoCronScript = cron.schedule("49 10 1 2 *", oneHourToGoCronFunction);
+      }
+
+    }
+
+    // ------------------------------------
+    if (req.body.checkHowManyPhotosCheckbox == "on")
+    {
+      console.log("checkHowManyPhotosCheckbox is on");
+
+      if (CRON_CHECK_MANY_PHOTOS_SCRIPT_RUNNING == 0)
+      {
+          CRON_CHECK_MANY_PHOTOS_SCRIPT_RUNNING = 1;
+          req.app.locals.checkHowManyPhotosCronScript = cron.schedule('* * * * *', () => checkHowManyPhotosCronFunction(req.body.checkHowManyPhotos));
+      }
+
+    }
+
+    // ------------------------------------
+    if (req.body.checkOldPhotosCheckbox == "on")
+    {
+      console.log("checkOldPhotosCheckbox is on");
+
+      if (CRON_CHECK_OLD_PHOTOS_SCRIPT_RUNNING == 0)
+      {
+        CRON_CHECK_OLD_PHOTOS_SCRIPT_RUNNING = 1;
+        req.app.locals.checkOldPhotosCronScript = cron.schedule('* * * * *', () => checkOldPhotosCronFunction(req.body.checkOldPhotos));
+      }
+
+    }
+
+    res.oidc.login();
+
+}); // end systemStartCronScripts
+
+// ---------------------------
+
+function startGameCronFunction()
+{
+    console.log('startGameCronFunction started');
+    return;
+
+    // call stored procedure
+    dbConn.query('CALL `assassin-demo1`.`system_start_game`()', function(err,rows)
+    {
+        if(err) {
+            console.log("Error on startGameCronFunction");
+            req.flash('error', err);
+        }
+        else
+        {
+            console.log("Successful startGameCronFunction RPC call.");
+            console.log(rows);
+
+            if (rows[0][0].phone == CALL_SUCCESS)
+            {
+                  if (rows[0].length > 1)
+                  {
+                      send_text_alerts(rows);
+                  }
+            }
+            else
+            {
+              // Render error page, passing in error code
+              res.render('errorMessagePage', {result: parseInt(rows[0][0].phone)});
+              return;
+            }
+
+        } // end else
+
+    }); // end query
+
+} // end startGameCronFunction
+
+// ---------------------------
+
+function endGameCronFunction()
+{
+    console.log('endGameCronFunction started');
+    return;
+
+    // call stored procedure
+    dbConn.query('CALL `assassin-demo1`.`system_end_game`()', function(err,rows)
+    {
+        if(err) {
+            console.log("Error on endGameCronFunction");
+            req.flash('error', err);
+        }
+        else
+        {
+            console.log("Successful endGameCronFunction RPC call.");
+            console.log(rows);
+
+            if (rows[0][0].phone == CALL_SUCCESS)
+            {
+                  if (rows[0].length > 1)
+                  {
+                      send_text_alerts(rows);
+                  }
+            }
+            else
+            {
+              // Render error page, passing in error code
+              res.render('errorMessagePage', {result: parseInt(rows[0][0].phone)});
+              return;
+            }
+
+        } // end else
+
+    }); // end query
+
+} // end endGameCronFunction
+
+// ---------------------------
+
+function morningStartCronFunction()
+{
+    console.log('morningStartCronFunction started');
+    return;
+
+    // call stored procedure
+    dbConn.query('CALL `assassin-demo1`.`system_morning_start`()', function(err,rows)
+    {
+        if(err) {
+            console.log("Error on morningStartCronFunction");
+            req.flash('error', err);
+        }
+        else
+        {
+            console.log("Successful morningStartCronFunction RPC call.");
+            console.log(rows);
+
+            if (rows[0][0].phone == CALL_SUCCESS)
+            {
+                  if (rows[0].length > 1)
+                  {
+                      send_text_alerts(rows);
+                  }
+            }
+            else
+            {
+              // Render error page, passing in error code
+              res.render('errorMessagePage', {result: parseInt(rows[0][0].phone)});
+              return;
+            }
+
+        } // end else
+
+    }); // end query
+
+} // end morningStartCronFunction
+
+// ---------------------------
+
+function nightEndCronFunction()
+{
+    console.log('nightEndCronFunction started');
+
+    // call stored procedure
+    dbConn.query('CALL `assassin-demo1`.`system_night_end`()', function(err,rows)
+    {
+        if(err) {
+            console.log("Error on nightEndCronFunction");
+            req.flash('error', err);
+        }
+        else
+        {
+            console.log("Successful nightEndCronFunction RPC call.");
+            console.log(rows);
+
+            if (rows[0][0].phone == CALL_SUCCESS)
+            {
+                  if (rows[0].length > 1)
+                  {
+                      send_text_alerts(rows);
+                  }
+            }
+            else
+            {
+              // Render error page, passing in error code
+              res.render('errorMessagePage', {result: parseInt(rows[0][0].phone)});
+              return;
+            }
+
+        } // end else
+
+    }); // end query
+
+} // nightEndCronFunction
+
+// ---------------------------
+
+function twoHoursToGoCronFunction()
+{
+    console.log('twoHoursToGoCronFunction started');
+
+    // call stored procedure
+    dbConn.query('CALL `assassin-demo1`.`system_check_for_forced_shift_changes`(?)',2, function(err,rows)
+    {
+        if(err) {
+            console.log("Error on twoHoursToGoCronFunction");
+            req.flash('error', err);
+        }
+        else
+        {
+            console.log("Successful twoHoursToGoCronFunction RPC call.");
+            console.log(rows);
+
+            if (rows[0][0].phone == CALL_SUCCESS)
+            {
+                  if (rows[0].length > 1)
+                  {
+                      send_text_alerts(rows);
+                  }
+            }
+            else
+            {
+              // Render error page, passing in error code
+              res.render('errorMessagePage', {result: parseInt(rows[0][0].phone)});
+              return;
+            }
+
+        } // end else
+
+    }); // end query
+
+  } // twoHoursToGoCronFunction
+
+// ---------------------------
+
+function oneHourToGoCronFunction()
+{
+    console.log('OneHourToGoCronFunction started');
+
+    // call stored procedure
+    dbConn.query('CALL `assassin-demo1`.`system_check_for_forced_shift_changes`(?)',1, function(err,rows)
+    {
+        if(err) {
+            console.log("Error on oneHourToGoCronFunction");
+            req.flash('error', err);
+        }
+        else
+        {
+            console.log("Successful oneHourToGoCronFunction RPC call.");
+            console.log(rows);
+
+            if (rows[0][0].phone == CALL_SUCCESS)
+            {
+                  if (rows[0].length > 1)
+                  {
+                      send_text_alerts(rows);
+                  }
+            }
+            else
+            {
+              // Render error page, passing in error code
+              res.render('errorMessagePage', {result: parseInt(rows[0][0].phone)});
+              return;
+            }
+
+        } // end else
+
+    }); // end query
+
+} // oneHourToGoCronFunction
+
+// ---------------------------
+
+function checkHowManyPhotosCronFunction(maxPhotos)
+{
+  console.log('checkHowManyPhotosCronFunction started');
+  console.log(maxPhotos);
+
+    // call stored procedure
+    dbConn.query('CALL `assassin-demo1`.`system_check_how_many_photos`()', function(err,rows)
+    {
+        if(err) {
+            console.log("Error on checkHowManyPhotosCronFunction");
+            req.flash('error', err);
+        }
+        else
+        {
+            console.log("Successful checkHowManyPhotosCronFunction RPC call.");
+            console.log(rows[0][0].numPhotosWaiting + " photos waiting for approval.");
+
+            if (rows[0][0].numPhotosWaiting >= maxPhotos)
+            {
+
+              console.log("Text sent to admin");
+              const client = require('twilio')('AC6c336c0b5f8641ab2a38d3ef0e5d2c74', 'a16111cee23bdcd8ddaac3f349e0c5f4');
+
+              // client.messages
+              // .create({
+              //      body: rows[0][0].numPhotosWaiting + " photos require approval."
+              //      from: '+13204001605',
+              //      to: rows[0][0].adminPhone
+              //  })
+              // .then(message => console.log(message.sid));
+            }
+
+        } // end else
+
+    }); // end query
+
+  } // checkHowManyPhotosCronFunction
+
+// ---------------------------
+
+function checkOldPhotosCronFunction(photoWaitTime)
+{
+  console.log('checkOldPhotosCronFunction started');
+  console.log(photoWaitTime);
+
+    // call stored procedure
+    dbConn.query('CALL `assassin-demo1`.`system_check_old_photos`(?)', photoWaitTime, function(err,rows)
+    {
+        if(err) {
+            console.log("Error on checkOldPhotosCronFunction");
+            req.flash('error', err);
+        }
+        else
+        {
+            console.log("Successful checkOldPhotosCronFunction RPC call.");
+            console.log(rows);
+            console.log(rows[0][0].numOldPhotos + " old photos waiting for approval.");
+
+            if (rows[0][0].numOldPhotos > 0)
+            {
+
+              console.log("Text sent to admin");
+              const client = require('twilio')('AC6c336c0b5f8641ab2a38d3ef0e5d2c74', 'a16111cee23bdcd8ddaac3f349e0c5f4');
+
+              // client.messages
+              // .create({
+              //      body: rows[0][0].checkOldPhotos + " old photos require approval."
+              //      from: '+13204001605',
+              //      to: rows[0][0].adminPhone
+              //  })
+              // .then(message => console.log(message.sid));
+            }
+
+
+        } // end else
+
+    }); // end query
+
+  } // checkOldPhotosCronFunction
+
+// ------------------------------------------------------------
+//
+router.post('/systemStopCronScripts', function(req, res, next)
+{
+    console.log("Got into systemStopCronScripts route call");
+
+    if (req.body.startGameCheckbox == "on")
+    {
+      console.log("startGameCheckbox is on");
+
+      if (CRON_START_GAME_SCRIPT_RUNNING == 1)
+      {
+        CRON_START_GAME_SCRIPT_RUNNING = 0;
+        req.app.locals.startGameCronScript.stop();
+      }
+
+    }
+
+    if (req.body.endGameCheckbox == "on")
+    {
+      console.log("endGameCheckbox is on");
+
+      if (CRON_END_GAME_SCRIPT_RUNNING == 1)
+      {
+        CRON_END_GAME_SCRIPT_RUNNING = 0;
+        req.app.locals.endGameCronScript.stop();
+      }
+
+    }
+
+    if (req.body.morningStartCheckbox == "on")
+    {
+      console.log("morningStartCheckbox is on");
+
+      if (CRON_MORNING_START_SCRIPT_RUNNING == 1)
+      {
+        CRON_MORNING_START_SCRIPT_RUNNING = 0;
+        req.app.locals.morningStartCronScript.stop();
+      }
+
+    }
+
+    if (req.body.nightEndCheckbox == "on")
+    {
+      console.log("nightEndCheckbox is on");
+
+      if (CRON_NIGHT_END_SCRIPT_RUNNING == 1)
+      {
+        CRON_NIGHT_END_SCRIPT_RUNNING = 0;
+        req.app.locals.nightEndCronScript.stop();
+      }
+
+    }
+
+    if (req.body.twoHoursToGoCheckbox == "on")
+    {
+      console.log("twoHoursToGoCheckbox is on");
+
+      if (CRON_2_HOURS_TO_TO_SCRIPT_RUNNING == 1)
+      {
+        CRON_2_HOURS_TO_TO_SCRIPT_RUNNING = 0;
+        req.app.locals.twoHoursToGoCronScript.stop();
+      }
+
+    }
+
+    if (req.body.oneHourToGoCheckbox == "on")
+    {
+      console.log("oneHourToGoCheckbox is on");
+
+      if (CRON_1_HOUR_TO_GO_SCRIPT_RUNNING == 1)
+      {
+        CRON_1_HOUR_TO_GO_SCRIPT_RUNNING = 0;
+        req.app.locals.oneHourToGoCronScript.stop();
+      }
+
+    }
+
+    if (req.body.checkHowManyPhotosCheckbox == "on")
+    {
+      console.log("checkHowManyPhotosCheckbox is on.  Going to try to stop the script now.");
+
+      if (CRON_CHECK_MANY_PHOTOS_SCRIPT_RUNNING == 1)
+      {
+        CRON_CHECK_MANY_PHOTOS_SCRIPT_RUNNING = 0;
+        console.log("Got here 1");
+        req.app.locals.checkHowManyPhotosCronScript.stop();
+      }
+
+    }
+
+    if (req.body.checkOldPhotosCheckbox == "on")
+    {
+      console.log("checkOldPhotosCheckbox is on.  Going to try to stop the script now.");
+
+      if (CRON_CHECK_OLD_PHOTOS_SCRIPT_RUNNING == 1)
+      {
+        CRON_CHECK_OLD_PHOTOS_SCRIPT_RUNNING = 0;
+        console.log("Got here 2");
+        req.app.locals.checkOldPhotosCronScript.stop();
+      }
+
+    }
+
+    res.oidc.login();
+
+}); // end systemStopCronScripts

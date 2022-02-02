@@ -54,12 +54,17 @@
 
         <hr>
 
-        <div style="height: 4px;"></div>
+        <div style="height: 2px;"></div>
+
+        <form autocomplete="off" action="cronManager" method="post" encType="multipart/form-data">
+            <input type="submit" class="btn btn-info" value="Cron Scheduler"/>
+            <div style="height: 16px;"></div>
+        </form>
 
         <form autocomplete="off" action="systemCheckForceShiftChange" onsubmit="return confirmChoice(<%= CONFIRM_FORCE_SHIFT %>)" method="post" encType="multipart/form-data">
             Hours To Go: <input type="search" size="1" name="hoursToGo" value="2" autocomplete="off">
-            <div style="height: 12px;"></div>
-            <input type="submit" class="btn btn-info" value="Force Shift Changes"/>
+            &nbsp&nbsp
+            <input type="submit" class="btn btn-info" value="Force Shifts"/>
             <div style="height: 2px;"></div>
         </form>
 

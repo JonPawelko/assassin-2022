@@ -1,3 +1,12 @@
+global.CRON_START_GAME_SCRIPT_RUNNING = 0;
+global.CRON_END_GAME_SCRIPT_RUNNING = 0;
+global.CRON_MORNING_START_SCRIPT_RUNNING = 0;
+global.CRON_NIGHT_END_SCRIPT_RUNNING = 0;
+global.CRON_2_HOURS_TO_TO_SCRIPT_RUNNING = 0;
+global.CRON_1_HOUR_TO_GO_SCRIPT_RUNNING = 0;
+global.CRON_CHECK_MANY_PHOTOS_SCRIPT_RUNNING = 0;
+global.CRON_CHECK_OLD_PHOTOS_SCRIPT_RUNNING = 0;
+
 var createError = require("http-errors");
 var express = require("express");
 const fileUpload = require('express-fileupload');
@@ -11,7 +20,6 @@ const myCronModule = require(__dirname + '/public/javascripts/cronScripts.js');
 var flash = require('express-flash');
 var session = require('express-session');
 var mysql = require('mysql2');
-var connection  = require('./lib/db');
 
 var assassinRouter = require('./routes/assassin');
 var app = express();
@@ -20,8 +28,18 @@ var app = express();
 app.use(bodyParser.json({ limit: "10mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
 
+const cron = require('node-cron');
+var dbConn  = require('./lib/db');   // database object
+
 // Global Confirm Code constants
 global.STRING_LENGTH = 45;  // set 45 char length for strings in mysql
+
+global.ONE_PHOTO = "one";
+global.MORE_THAN_ONE_PHOTO = "more";
+global.CHECKBOX_ON = "on";
+global.CHECKBOX_OFF = "off";
+global.LEAVE_BREAK = "break";
+global.LEAVE_QUIT = "quit";
 
 // Global Confirm Code constants
 global.CONFIRM_GO_LIVE = 1;
@@ -55,6 +73,8 @@ global.EVENT_PAID_BOUNTY = 19;
 global.EVENT_MOVED_TO_WAITING = 20;
 global.EVENT_MARK_TEAM_PAID = 21;
 global.EVENT_MARK_TEAM_ACTIVATED = 22;
+global.EVENT_MORNING_START = 23;
+global.EVENT_MARK_NIGHT_END = 24;
 
 // Global Return Code constants
 global.CALL_SUCCESS = 1;
@@ -88,6 +108,7 @@ global.ERROR_INVALID_PHONE_NUMBER = 123;
 global.ERROR_INVALID_BOUNTY_PAYOUT = 124;
 global.ERROR_INVALID_HOURS_TO_GO = 125;
 global.ERROR_INVALID_PREP_INPUTS = 126;
+global.ERROR_INSUFFICIENT_TEAMS_TO_START = 127;
 
 const { auth } = require('express-openid-connect');
 
@@ -95,7 +116,7 @@ const config = {
   authRequired: false,
   auth0Logout: true,
   secret: 'kjgfkjwehrasrjbadjbjhsdfjbsdfgjakasdkdgf9kb2agkn',
-  //baseURL: 'http://159.65.180.75',
+  // baseURL: 'http://159.65.180.75',
   baseURL: 'http://localhost:3000',
   clientID: 'xILNWHiJzCD9MOOltuo391jUROB7Al0Q',
   issuerBaseURL: 'https://dev-ae79isjb.us.auth0.com'
@@ -161,5 +182,84 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
+//
+// // parse start date into cron scheduler format
+// var tempDate = new Date("2022-06-22 09:00:00");
+//
+// var minute = tempDate.getMinutes();
+// var hour = tempDate.getHours();
+// var day = tempDate.getDate();
+// var month = tempDate.getMonth();
+//
+// var cronString = minute + " " + hour + " " + day + " " + month + " *";
+//
+// console.log(cronString);
 
-// myCronModule.startCronScripts();
+// startCronScript1();
+
+// startCronScript2();
+
+// --------------------------------------------------------
+
+function startCronScript1()
+{
+  console.log("Starting cron script1");
+
+  // CRON_START_GAME_SCRIPT_RUNNING = 1;
+
+  // Schedule tasks to be run
+  app.locals.startGameCronScript = cron.schedule('*/10 * * * * *', function()
+  {
+    console.log('running a task every 10 seconds');
+
+    // Call stored procedure to drop bomb
+    dbConn.query('CALL `assassin-demo1`.`temp_tester`()', function(err,rows)
+    {
+        if(err)
+        {
+            console.log("Error on adminDropBomb call.");
+            req.flash('error', err);
+        } else
+        {
+            console.log("tester rpc worked.");
+            console.log(rows);
+        } // end else
+
+    }); // end query
+
+  });
+
+  // console.log(app.locals.cronJobNumber);
+
+}
+
+// --------------------------------------------------------
+
+function startCronScript2()
+{
+  console.log("Starting cron script2");
+
+  // Schedule tasks to be run
+  cron.schedule('*/4 * * * *', function()
+  {
+    console.log('running every 4 minutes');
+
+    app.locals.cronJobNumber.stop();
+
+  // console.log(task);
+  });
+
+  // console.log(app.locals.cronJobNumber);
+
+}
+
+
+//
+// const cron = require('node-cron');
+//
+// var task = cron.schedule('* * * * *', () => {
+//     // code
+// });
+//
+// // stops the cron job
+// task.stop();

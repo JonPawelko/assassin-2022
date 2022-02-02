@@ -20,6 +20,34 @@
 		  <div class="card-header">
 				<div style="height: 3px;"></div>
 				<h5>Welcome to Assassin <%= playerName %>!</h5>
+
+				<!-- check game status here -->
+				<% 	switch(gameStatus)
+				{
+						case "Not Started":
+								%>
+								The game has not started yet.
+								<div style="height: 6px;"></div>
+								<%
+								break;
+
+						case "Overnight":
+								%>
+								The game is on overnight break.
+								<div style="height: 6px;"></div>
+								<%break;
+
+						case "Over":
+								%>
+								The game is over.
+								<div style="height: 6px;"></div>
+								<%
+								break;
+
+						default:
+							// do nothing
+				}%>
+
 		  </div>
 
 		  <div class="card-body">
@@ -27,13 +55,8 @@
 					<% 	switch(teamStatus)
 					{
 							case "0":
-									%><div style="height: 2px;"></div>
-											You must either join or create a Team to play Assassin.
-											<div style="height: 11px;"></div>
-											<%- include('joinTeamFeatures'); %>
-											-OR-
-											<div style="height: 12px;"></div>
-											<%- include('createTeamFeatures'); %>
+									%>
+											<%- include('freeAgentFeatures'); %>
 									<%
 									break;
 
@@ -45,9 +68,7 @@
 
 							case "Waiting":
 										%>
-
-												Your team status is Waiting.<br>Your individual status is <%= playerStatus %>.<br>Your team will enter the game on the next major event.<br>
-
+														<%- include('waitingTeamFeatures'); %>
 										<%
 										break;
 
@@ -67,34 +88,30 @@
 
 							case "Registered":
 										%>
-
-												Your team status is Registered.<br>Your individual status is <%= playerStatus %>.<br>Your Team will move to Waiting when your pictures are approved and you have paid.<br>
+												<%- include('registeredTeamFeatures'); %>
 										<%
 										break;
 
 							case "Pics Approved":
 										%>
-
-												Your team status is Pictures Approved.<br>Your individual status is <%= playerStatus %>.<br>Your Team will move to Waiting when you have paid.<br>
+												<%- include('picsApprovedTeamFeatures'); %>
 										<%
 										break;
 
 							case "Paid":
 										%>
-
-												Your team status is Paid.<br>Your individual status is <%= playerStatus %>.<br>Your Team will move to Waiting when your pictures have been approved.<br>
+												<%- include('paidTeamFeatures'); %>
 										<%
 										break;
 
 							case "Quit":
 										%>
-
-												Your team status is Quit.<br>Your individual status is <%= playerStatus %>.  You can register as a new Team.<br>
+												<%- include('quitTeamFeatures'); %>
 										<%
 										break;
 
 							default:
-						    // code block
+						    // need code block
 					}
 
 					%>
@@ -110,7 +127,7 @@
 		<%}
 		else
 		{%>
-				<% if (numTeammates > 0) { %>
+				<% if ((numTeammates > 0) && (gameStatus != "Over")) { %>
 
 						<div style="height: 14px;"></div>
 
@@ -171,6 +188,18 @@
 			Team Code:  <%= playerTeamCode %>
 			<div style="height: 9px;"></div>
 
+			Team Shift Start:
+				<%
+						if (numTeammates == 0)
+				{%>
+						<%= myLastShiftTimeStamp %>
+				<%}	else
+				{%>
+					<%= teamCurrentShiftStart %>
+				<%}%>
+
+			<div style="height: 9px;"></div>
+
 			Team Bounties Owed:  <%= teamBountiesOwed %>
 			<div style="height: 9px;"></div>
 
@@ -180,7 +209,9 @@
 			Your Photo Status:  <%= playerPicStatus %>
 			<div style="height: 12px;"></div>
 
-			<% 	if ((playerPicStatus == "Approved") || (playerPicStatus == "Uploaded")) { %>
+			<!-- game over checks -->
+
+			<% 	if (((playerPicStatus == "Approved") || (playerPicStatus == "Uploaded")) && (gameStatus != "Over"))  { %>
 
 				<form action="managePicture" method="post">
 							<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
@@ -190,19 +221,23 @@
 							<div style="height: 15px;"></div>
 				</form>
 
-			<% } else {  // rejected pic %>
+			<% } else {  // rejected pic
 
-				<form action="managePicture" method="post">
-							<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-							<input type="hidden" name="playerPic" value="<%= playerPic %>">
-							<input type="hidden" name="picFeature" value="Edit">
-							<input type="submit" class="btn btn-info" value="Upload New Picture"/>
-							<div style="height: 15px;"></div>
-				</form>
+						if	(gameStatus != "Over")
+						    {
+						%>
+										<form action="managePicture" method="post">
+													<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+													<input type="hidden" name="playerPic" value="<%= playerPic %>">
+													<input type="hidden" name="picFeature" value="Edit">
+													<input type="submit" class="btn btn-info" value="Upload New Picture"/>
+													<div style="height: 15px;"></div>
+										</form>
 
+						<% } %>
 			<%}%>
 
-			<% 	if ((playerPhone == "") || (playerPhone == null)) { %>
+			<% 	if (((playerPhone == "") || (playerPhone == null)) && (gameStatus != "Over")) { %>
 
 				<form action="addPlayerPhoneNumber" method="post">
 							<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
@@ -210,31 +245,44 @@
 							<div style="height: 15px;"></div>
 				</form>
 
-			<% } else {%>
+			<% } else {
 
-				<form action="editPlayerPhoneNumber" method="post">
-							<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-							<input type="hidden" name="myPhoneNumber" value="<%= playerPhone %>">
-							<input type="submit" class="btn btn-info" value="Edit Phone Number"/>
-							<div style="height: 15px;"></div>
-				</form>
+					if	(gameStatus != "Over")
+							{
+					%>
+									<form action="editPlayerPhoneNumber" method="post">
+												<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+												<input type="hidden" name="myPhoneNumber" value="<%= playerPhone %>">
+												<input type="submit" class="btn btn-info" value="Edit Phone Number"/>
+												<div style="height: 15px;"></div>
+									</form>
 
-				<form action="removePlayerPhoneNumber" onsubmit="return confirmChoice(<%= CONFIRM_REMOVE_PHONE %>)" method="post">
-							<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-							<input type="submit" class="btn btn-info" value="Remove Phone Number"/>
-							<div style="height: 15px;"></div>
-				</form>
+									<form action="removePlayerPhoneNumber" onsubmit="return confirmChoice(<%= CONFIRM_REMOVE_PHONE %>)" method="post">
+												<input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+												<input type="submit" class="btn btn-info" value="Remove Phone Number"/>
+												<div style="height: 15px;"></div>
+									</form>
 
-			<%}%>
+							<% } %>
 
-			<!-- <%- include('quitFeatures'); %> -->
-			<form action="quitGame" onsubmit="return confirmChoice(<%= CONFIRM_QUIT %>)" method="post">
-			    <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-			    <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
-			    <input type="submit" class="btn btn-info" value="Quit Game"/>
-					&nbsp&nbsp&nbsp
-					<input type="submit" class="btn btn-info" formaction="assassinLogout" value="Logout"/>
-			</form>
+						<% } %>
+
+			<%  if	(gameStatus != "Over")
+			    {
+			%>
+						<form action="quitGame" onsubmit="return confirmChoice(<%= CONFIRM_QUIT %>)" method="post">
+						    <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+						    <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
+						    <input type="submit" class="btn btn-info" value="Quit Game"/>
+						</form>
+
+						<div style="height: 16px;"></div>
+
+						<form action="assassinLogout" method="post">
+							<input type="submit" class="btn btn-info" value="Logout"/>
+						</form>
+
+			<% } %>
 
 			<div style="height: 8px;"></div>
 
