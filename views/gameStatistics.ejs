@@ -31,14 +31,21 @@
     <div style="height: 8px;"></div>
     Most Player Kills - Today:&nbsp<%= dayPlayerLeader %>
     <div style="height: 8px;"></div>
-    My Team Kills - Week:&nbsp<%= myTeamTotalKills %>
-    <div style="height: 8px;"></div>
-    My Team Kills - Today:&nbsp<%= myTeamTodayKills %>
-    <div style="height: 8px;"></div>
-    Personal Kills - Week:&nbsp<%= myPersonalKillsWeek %>
-    <div style="height: 8px;"></div>
-    Personal Kills - Today:&nbsp<%= myPersonalKillsDay %>
-    <div style="height: 8px;"></div>
+    <% if (teamStatus != "0") { %>
+      My Team Kills - Week:&nbsp<%= myTeamTotalKills %>
+      <div style="height: 8px;"></div>
+      My Team Kills - Today:&nbsp<%= myTeamTodayKills %>
+      <div style="height: 8px;"></div>
+      Personal Kills - Week:&nbsp<%= myPersonalKillsWeek %>
+      <div style="height: 8px;"></div>
+      Personal Kills - Today:&nbsp<%= myPersonalKillsDay %>
+      <div style="height: 8px;"></div>
+    <%}%>
+
+
+
+
+
 
 </div>
 

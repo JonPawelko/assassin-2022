@@ -179,32 +179,36 @@
 			Phone:  <%= playerPhone %>
 			<div style="height: 9px;"></div>
 
-			My Last Shift:  <%= myLastShiftTimeStamp %>
-			<div style="height: 9px;"></div>
+			<% if (teamStatus != "0") { %>
 
-			Your Team Name:  <%= playerTeamName %>
-			<div style="height: 9px;"></div>
+				My Last Shift:  <%= myLastShiftTimeStamp %>
+				<div style="height: 9px;"></div>
 
-			Team Code:  <%= playerTeamCode %>
-			<div style="height: 9px;"></div>
+				Your Team Name:  <%= playerTeamName %>
+				<div style="height: 9px;"></div>
 
-			Team Shift Start:
-				<%
-						if (numTeammates == 0)
-				{%>
-						<%= myLastShiftTimeStamp %>
-				<%}	else
-				{%>
-					<%= teamCurrentShiftStart %>
-				<%}%>
+				Team Code:  <%= playerTeamCode %>
+				<div style="height: 9px;"></div>
 
-			<div style="height: 9px;"></div>
+				Team Shift Start:
+					<%
+							if (numTeammates == 0)
+					{%>
+							<%= myLastShiftTimeStamp %>
+					<%}	else
+					{%>
+						<%= teamCurrentShiftStart %>
+					<%}%>
 
-			Team Bounties Owed:  <%= teamBountiesOwed %>
-			<div style="height: 9px;"></div>
+					<div style="height: 9px;"></div>
 
-			Total Team Bounties Earned:  <%= totalTeamBountiesEarned %>
-			<div style="height: 9px;"></div>
+					Team Bounties Owed:  <%= teamBountiesOwed %>
+					<div style="height: 9px;"></div>
+
+					Total Team Bounties Earned:  <%= totalTeamBountiesEarned %>
+					<div style="height: 9px;"></div>
+
+			<%}%>
 
 			Your Photo Status:  <%= playerPicStatus %>
 			<div style="height: 12px;"></div>

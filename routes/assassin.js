@@ -30,7 +30,7 @@ router.post('/assassinLogin', function(req, res, next)
 //
 router.post('/assassinRegister', function(req, res, next) {
 
-  console.log("Before assassinRegister");
+  console.log("Got into assassinRegister");
 
   res.oidc.login(
   {
@@ -39,8 +39,6 @@ router.post('/assassinRegister', function(req, res, next) {
         screen_hint: 'signup'   // this will denote registration vs regular login
       }
   });
-
-  console.log("After assassinRegister");
 
 });  // end router post assassinRegister
 
@@ -64,7 +62,7 @@ router.get('/', function(req, res, next) {
   var tempMyLastShift;  // helper for null last shifts and formatting
   var tempTeamLastShift;  // helper for null last shifts and formatting
 
-  // Check authentication status
+  // Check authentication status, route to landing page if not authenticated
   if (!req.oidc.isAuthenticated())
   {
       console.log("Not authenticated");
@@ -128,13 +126,11 @@ router.get('/', function(req, res, next) {
                         tempTeamLastShift = "";
                       }
 
-                      console.log("Last shift is " + tempMyLastShift);
-                      console.log("Numteammates is " + rows[0][0].numTeammates);
-
                       // Check if Player has any teammates
                       if (rows[0][0].numTeammates > 0)
                       {
                           console.log("At least 1 teammate");
+
                           // get teammate info, could be multiple rows returned
                           dbConn.query('CALL `assassin-demo1`.`get_teammate_info`(?,?)', [rows[0][0].playerCode, rows[0][0].playerTeamCode], function(err,rows2)
                           {
@@ -190,7 +186,7 @@ router.get('/', function(req, res, next) {
                               }
                           }); // end get_teammate_info rpc call
                       }
-                      else // Player has no teammates, don't need to send data that defaults to the Captain
+                      else // Player has no teammates, don't send data that defaults to the Captain
                       {
                           res.render('home', {
                           gameStatus: rows[0][0].gameStatus,
