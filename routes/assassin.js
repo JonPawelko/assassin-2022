@@ -1,13 +1,13 @@
-// All Routes defined here.  Router exported at bottom.
+// All Routes defined here.  Router exported.
 //
-// import { clone, cloneDeep } from "lodash"
-// var _ = require('lodash'); // Load the full build - used for deep array copy - didn't work, uninstalled for now
+
 var express = require('express');
 const fileUpload = require('express-fileupload');
 var router = express.Router();
 var dbConn  = require('../lib/db');   // database object
 const cron = require('node-cron');
-var myapp = require('../app');
+var CREDENTIALS = require('../gitignore/credentials.json');
+const twilio = require('twilio')(CREDENTIALS.TWILIO_ACCOUNT_SID, CREDENTIALS.TWILIO_AUTH_TOKEN);
 
 // -------------------------------------------------------------
 // Export the router
@@ -108,6 +108,8 @@ router.get('/', function(req, res, next) {
                       console.log("Successful get_statistics RPC call.");
                       console.log(rowsStats[0]);
 
+                      // check error code here and log, but don't return zzz
+
                       if (rows[0][0].myLastShiftTimeStamp != null)
                       {
                         tempMyLastShift = formatDate(rows[0][0].myLastShiftTimeStamp);
@@ -142,6 +144,8 @@ router.get('/', function(req, res, next) {
                               {
                                   console.log("Successful Get Teammate Info RPC call.");
                                   console.log(rows2[0]);
+
+                                  // need error checking here zzz
 
                                   // route to home page passing Player info and teammate info
                                   res.render('home', {
@@ -346,7 +350,12 @@ router.post('/newAssassin', function(req, res, next)
                                 // Create Player worked, now upload photo
                                 console.log("update_photo_status_to_uploaded rpc worked");
 
-                                // need to check return code here zzz
+                                if (rows[0][0].phone != CALL_SUCCESS)
+                                {
+                                    // Render error page, passing in error code
+                                    res.render('errorMessagePage', {result: rows[0][0].phone});
+                                    return;
+                                }
 
                                 res.oidc.login();  // route Player back to Home
 
@@ -496,7 +505,7 @@ router.post('/rebuy', function(req, res, next)
   }
 
   // call stored procedure
-  dbConn.query('CALL `assassin-demo1`.`rebuy`(?,?)', [req.body.myPlayerCode,req.body.myTeamCode], function(err,rows)
+  dbConn.query('CALL `assassin-demo1`.`rebuy`(?,?)', [req.body.myPlayerCode, req.body.myTeamCode], function(err,rows)
   {
       if(err) {
           console.log("Error on rebuy");
@@ -544,7 +553,7 @@ router.post('/goLive', function(req, res, next)
   }
 
   // Call stored procedure
-  dbConn.query('CALL `assassin-demo1`.`go_live`(?,?)', [req.body.myPlayerCode,req.body.myTeamCode], function(err,rows)
+  dbConn.query('CALL `assassin-demo1`.`go_live`(?,?)', [req.body.myPlayerCode, req.body.myTeamCode], function(err,rows)
   {
       if(err) {
           console.log("Error on Go Live");
@@ -1303,6 +1312,8 @@ router.post('/adminSearchForTeam', function(req, res, next)
     var tempTeamName = "";
     var tempPlayerName = "";
 
+    // error checking, format of input text, and all not blank zzz
+
     if (req.body.teamCode != "")
     {
         tempTeamCode = req.body.teamCode;
@@ -1392,6 +1403,8 @@ router.post('/adminSearchForPlayer', function(req, res, next)
     var tempPlayerCode = 0;
     var tempTeamCode = 0;
     var playerPicPath;
+
+    // error checking here, same as teams zzz
 
     if (req.body.teamName != "")
     {
@@ -1642,6 +1655,13 @@ router.post('/uploadPhoto', function(req, res, next)
 
             // need real error checking here zzz - check return code
 
+            if (rows[0][0].phone != CALL_SUCCESS)
+            {
+                // Render error page, passing in error code
+                res.render('errorMessagePage', {result: rows[0][0].phone});
+                return;
+            }
+
             // name of the input is playerPhotoFile
             playerPhotoFile = req.files.playerPhotoFile;
             uploadPath = __dirname + '/../public/photos/' + playerPhotoFile.name;  // might want to clean up this directory logic
@@ -1807,10 +1827,7 @@ router.post('/adminMarkPaidAndApprovePhoto', function(req, res, next)
           // check return code here, continue with approve photo if ok
           if (rows[0][0].phone == CALL_SUCCESS)
           {
-              if (rows[0].length > 1)
-              {
-                  send_text_alerts(rows);
-              }
+              // don't need to check for alerts here because we are about to approve pic
 
               // Call stored procedure to approve picture
               dbConn.query('CALL `assassin-demo1`.`admin_approve_picture`(?)', req.body.playerCode, function(err,rows)
@@ -1917,11 +1934,12 @@ router.post('/adminUpdatePlayerData', function(req, res, next)
           req.flash('error', err);
       } else {
           console.log("Successful update_player_data RPC call.");
+          console.log(rows);
 
           // should check return code here zzz
 
-          console.log(rows);
           res.oidc.login(); // send back home to refresh page
+
       } // end else
 
   }); // end query
@@ -1944,6 +1962,8 @@ router.post('/adminUpdateTeamName', function(req, res, next)
       return;
   }
 
+  // Check team name format here zzz ?
+
   // Call stored procedure
   dbConn.query('CALL `assassin-demo1`.`admin_update_team_name`(?,?)', [req.body.teamCode, req.body.teamName], function(err,rows)
   {
@@ -1954,7 +1974,7 @@ router.post('/adminUpdateTeamName', function(req, res, next)
           console.log("Successful admin_update_team_name RPC call.");
           console.log(rows);
 
-          //  should check return code here
+          //  should check return code here zzz
 
           res.oidc.login(); // send back home to refresh page
       } // end else
@@ -2072,8 +2092,6 @@ router.post('/removePlayerPhoneNumber', function(req, res, next)
       return;
   }
 
-  console.log(req.body.myPlayerCode);
-
   // Call stored procedure
   dbConn.query('CALL `assassin-demo1`.`remove_player_phone`(?)', req.body.myPlayerCode, function(err,rows)
   {
@@ -2156,6 +2174,7 @@ router.post('/adminDropBomb', function(req, res, next)
               send_text_alerts(rows);
           }
           res.oidc.login();
+
       } // end else
 
   }); // end query
@@ -2266,8 +2285,6 @@ function send_text_alerts(rows)
 {
   console.log("Got into send text alerts -------------");
 
-  const client = require('twilio')('AC6c336c0b5f8641ab2a38d3ef0e5d2c74', 'a16111cee23bdcd8ddaac3f349e0c5f4');
-
   var i;
   var decodedMessage;
 
@@ -2366,13 +2383,23 @@ function send_text_alerts(rows)
               decodedMessage = "Your Team has been moved to the Waiting Area!  You will enter the Game on the next major event.";
               break;
 
+            case EVENT_MORNING_START:
+              console.log("Morning start.");
+              decodedMessage = "Good morning! Assassin has started.";
+              break;
+
+            case EVENT_MARK_NIGHT_END:
+              console.log("Night end");
+              decodedMessage = "Assassin has ended for the night.";
+              break;
+
           default:
             console.log("Unkown event. Code = " + rows[0][i].eventCode);
             decodedMessage = "Assassin event, log in to view any changes.";
         }
 
-      // client.messages
-      // .create({
+      // twilio.messages
+      //   .create({
       //      body: decodedMessage,
       //      from: '+13204001605',
       //      to: rows[0][i+1].phone
@@ -2397,10 +2424,6 @@ function checkForUploadedPhotos(res)
       {
           // bulk picture approve worked
           console.log("bulk picture approve rpc worked.");
-          // console.log(rows);
-          // console.log(rows[0][0].numUploadedPhotos);
-          // console.log(rows[0][0].playerCode);
-          // console.log(rows[0][0].photoFilename);
 
           if (rows[0][0].numUploadedPhotos > 0)
           {
@@ -3016,9 +3039,8 @@ function checkHowManyPhotosCronFunction(maxPhotos)
             {
 
               console.log("Text sent to admin");
-              const client = require('twilio')('AC6c336c0b5f8641ab2a38d3ef0e5d2c74', 'a16111cee23bdcd8ddaac3f349e0c5f4');
 
-              // client.messages
+              // twilio.messages
               // .create({
               //      body: rows[0][0].numPhotosWaiting + " photos require approval."
               //      from: '+13204001605',
@@ -3057,9 +3079,8 @@ function checkOldPhotosCronFunction(photoWaitTime)
             {
 
               console.log("Text sent to admin");
-              const client = require('twilio')('AC6c336c0b5f8641ab2a38d3ef0e5d2c74', 'a16111cee23bdcd8ddaac3f349e0c5f4');
 
-              // client.messages
+              // twilio.messages
               // .create({
               //      body: rows[0][0].checkOldPhotos + " old photos require approval."
               //      from: '+13204001605',

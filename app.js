@@ -14,6 +14,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var bodyParser = require('body-parser');
+var CREDENTIALS = require('./gitignore/credentials.json');
 
 const myCronModule = require(__dirname + '/public/javascripts/cronScripts.js');
 
@@ -116,10 +117,10 @@ const { auth } = require('express-openid-connect');
 const config = {
   authRequired: false,
   auth0Logout: true,
-  secret: 'kjgfkjwehrasrjbadjbjhsdfjbsdfgjakasdkdgf9kb2agkn',
+  secret: CREDENTIALS.AUTH0_SECRET,
   // baseURL: 'http://159.65.180.75',
   baseURL: 'http://localhost:3000',
-  clientID: 'xILNWHiJzCD9MOOltuo391jUROB7Al0Q',
+  clientID: CREDENTIALS.AUTH0_CLIENT_ID,
   issuerBaseURL: 'https://dev-ae79isjb.us.auth0.com'
 };
 
@@ -201,66 +202,66 @@ module.exports = app;
 // startCronScript2();
 
 // --------------------------------------------------------
-
-function startCronScript1()
-{
-  console.log("Starting cron script1");
-
-  // CRON_START_GAME_SCRIPT_RUNNING = 1;
-
-  // Schedule tasks to be run
-  app.locals.startGameCronScript = cron.schedule('*/10 * * * * *', function()
-  {
-    console.log('running a task every 10 seconds');
-
-    // Call stored procedure to drop bomb
-    dbConn.query('CALL `assassin-demo1`.`temp_tester`()', function(err,rows)
-    {
-        if(err)
-        {
-            console.log("Error on adminDropBomb call.");
-            req.flash('error', err);
-        } else
-        {
-            console.log("tester rpc worked.");
-            console.log(rows);
-        } // end else
-
-    }); // end query
-
-  });
-
-  // console.log(app.locals.cronJobNumber);
-
-}
-
-// --------------------------------------------------------
-
-function startCronScript2()
-{
-  console.log("Starting cron script2");
-
-  // Schedule tasks to be run
-  cron.schedule('*/4 * * * *', function()
-  {
-    console.log('running every 4 minutes');
-
-    app.locals.cronJobNumber.stop();
-
-  // console.log(task);
-  });
-
-  // console.log(app.locals.cronJobNumber);
-
-}
-
-
 //
-// const cron = require('node-cron');
+// function startCronScript1()
+// {
+//   console.log("Starting cron script1");
 //
-// var task = cron.schedule('* * * * *', () => {
-//     // code
-// });
+//   // CRON_START_GAME_SCRIPT_RUNNING = 1;
 //
-// // stops the cron job
-// task.stop();
+//   // Schedule tasks to be run
+//   app.locals.startGameCronScript = cron.schedule('*/10 * * * * *', function()
+//   {
+//     console.log('running a task every 10 seconds');
+//
+//     // Call stored procedure to drop bomb
+//     dbConn.query('CALL `assassin-demo1`.`temp_tester`()', function(err,rows)
+//     {
+//         if(err)
+//         {
+//             console.log("Error on adminDropBomb call.");
+//             req.flash('error', err);
+//         } else
+//         {
+//             console.log("tester rpc worked.");
+//             console.log(rows);
+//         } // end else
+//
+//     }); // end query
+//
+//   });
+//
+//   // console.log(app.locals.cronJobNumber);
+//
+// }
+//
+// // --------------------------------------------------------
+//
+// function startCronScript2()
+// {
+//   console.log("Starting cron script2");
+//
+//   // Schedule tasks to be run
+//   cron.schedule('*/4 * * * *', function()
+//   {
+//     console.log('running every 4 minutes');
+//
+//     app.locals.cronJobNumber.stop();
+//
+//   // console.log(task);
+//   });
+//
+//   // console.log(app.locals.cronJobNumber);
+//
+// }
+//
+//
+// //
+// // const cron = require('node-cron');
+// //
+// // var task = cron.schedule('* * * * *', () => {
+// //     // code
+// // });
+// //
+// // // stops the cron job
+// // task.stop();
