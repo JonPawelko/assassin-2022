@@ -62,6 +62,9 @@ router.get('/', function(req, res, next) {
   var tempMyLastShift;  // helper for null last shifts and formatting
   var tempTeamLastShift;  // helper for null last shifts and formatting
 
+  var tempPlayerPic; // used to replace any spaces in file names
+  var tempTargetPic;
+
   // Check authentication status, route to landing page if not authenticated
   if (!req.oidc.isAuthenticated())
   {
@@ -77,8 +80,12 @@ router.get('/', function(req, res, next) {
   {
       if(err)
       {
-          console.log("Error on get_player_info_and_game_status call.");
-          req.flash('error', err);
+        console.log("MySQL error on get_player_info_and_game_status call: " + err.code + " - " + err.message);
+
+        // Render error page, passing in error data
+        res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+        return;
+
       } else
       {
           console.log("Successful Get Info RPC call.");
@@ -101,14 +108,20 @@ router.get('/', function(req, res, next) {
               {
                   if(err)
                   {
-                      console.log("Error with get_statistics");
-                      req.flash('error', err);
+                      console.log("MySQL error on get_statistics call: " + err.code + " - " + err.message);
+                      // Render error page, passing in error data
+                      res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+                      return;
                   } else
                   {
                       console.log("Successful get_statistics RPC call.");
                       console.log(rowsStats[0]);
 
-                      // check error code here and log, but don't return zzz
+                      // check error code here and log, but don't return
+                      if (rowsStats[0][0].returnCode != CALL_SUCCESS)
+                      {
+                          console.log("Error in get stats rpc, call worked, error return code: " + rows[0][0].returnCode);
+                      }
 
                       if (rows[0][0].myLastShiftTimeStamp != null)
                       {
@@ -128,6 +141,15 @@ router.get('/', function(req, res, next) {
                         tempTeamLastShift = "";
                       }
 
+                      // update pic path and replace any spaces in file names with code
+                      let tempPic = "photos/" + rows[0][0].playerPic;
+                      tempPlayerPic = tempPic.replace(/ /g, "%20");
+                      console.log("tempPlayerPic is " + tempPlayerPic);
+
+                      let tempPic2 = "photos/" + rows[0][0].targetPic;
+                      tempTargetPic = tempPic2.replace(/ /g, "%20");
+                      console.log("tempPlayerPic2 is " + tempTargetPic);
+
                       // Check if Player has any teammates
                       if (rows[0][0].numTeammates > 0)
                       {
@@ -138,14 +160,16 @@ router.get('/', function(req, res, next) {
                           {
                               if(err)
                               {
-                                  console.log("Error");
-                                  req.flash('error', err);
+                                  console.log("MySQL error on get_teammate_info call: " + err.code + " - " + err.message);
+                                  // Render error page, passing in error data
+                                  res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+                                  return;
                               } else
                               {
                                   console.log("Successful Get Teammate Info RPC call.");
                                   console.log(rows2[0]);
 
-                                  // need error checking here zzz
+                                  // not going to do addl error checking here. We already know this player has at least 1 teammate.
 
                                   // route to home page passing Player info and teammate info
                                   res.render('home', {
@@ -155,7 +179,7 @@ router.get('/', function(req, res, next) {
                                   playerStatus: rows[0][0].playerStatus,
                                   playerEmail: req.oidc.user.email,
                                   playerPhone: rows[0][0].playerPhone,
-                                  playerPic: rows[0][0].playerPic,
+                                  playerPic: tempPlayerPic,
                                   playerPicStatus: rows[0][0].playerPicStatus,
                                   myLastShiftTimeStamp: tempMyLastShift,
                                   playerTeamName: rows[0][0].playerTeamName,
@@ -171,9 +195,11 @@ router.get('/', function(req, res, next) {
                                   teamCurrentShiftStart: tempTeamLastShift,
                                   targetTeamName: rows[0][0].targetTeamName,
                                   targetName: rows[0][0].targetName,
-                                  targetPic: rows[0][0].targetPic,
+                                  targetPic: tempTargetPic,
                                   totalPlayers: rowsStats[0][0].totalPlayers,
                                   totalTeams: rowsStats[0][0].totalTeams,
+                                  totalCelebs: rowsStats[0][0].totalCelebs,
+                                  liveCelebs: rowsStats[0][0].liveCelebs,
                                   liveTeams: rowsStats[0][0].liveTeams,
                                   waitingTeams: rowsStats[0][0].waitingTeams,
                                   totalKills: rowsStats[0][0].totalKills,
@@ -199,7 +225,7 @@ router.get('/', function(req, res, next) {
                           playerStatus: rows[0][0].playerStatus,
                           playerEmail: req.oidc.user.email,
                           playerPhone: rows[0][0].playerPhone,
-                          playerPic: rows[0][0].playerPic,
+                          playerPic: tempPlayerPic,
                           playerPicStatus: rows[0][0].playerPicStatus,
                           myLastShiftTimeStamp: tempMyLastShift,
                           playerTeamName: rows[0][0].playerTeamName,
@@ -215,9 +241,11 @@ router.get('/', function(req, res, next) {
                           // teamCurrentShiftStart: tempTeamLastShift,
                           targetTeamName: rows[0][0].targetTeamName,
                           targetName: rows[0][0].targetName,
-                          targetPic: rows[0][0].targetPic,
+                          targetPic: tempTargetPic,
                           totalPlayers: rowsStats[0][0].totalPlayers,
                           totalTeams: rowsStats[0][0].totalTeams,
+                          totalCelebs: rowsStats[0][0].totalCelebs,
+                          liveCelebs: rowsStats[0][0].liveCelebs,
                           liveTeams: rowsStats[0][0].liveTeams,
                           waitingTeams: rowsStats[0][0].waitingTeams,
                           totalKills: rowsStats[0][0].totalKills,
@@ -316,8 +344,10 @@ router.post('/newAssassin', function(req, res, next)
     {
         if(err)
         {
-            console.log("Error on create_player_from_email call.");
-            req.flash('error', err);
+            console.log("MySQL error on create_player_from_email call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         } else
         {
             // Create Player worked, now upload photo
@@ -331,8 +361,11 @@ router.post('/newAssassin', function(req, res, next)
                 {
                     if (err)
                     {
-                      console.log("Error on file upload");
-                      return res.status(500).send(err);
+                      // zzz
+                      console.log("File upload error in create_player_from_email call: " + err.code + " - " + err.message);
+                      // Render error page, passing in error data
+                      res.render('errorMessagePage', {result: ERROR_ON_FILE_UPLOAD});
+                      return;
                     }
                     else
                     {
@@ -343,11 +376,13 @@ router.post('/newAssassin', function(req, res, next)
                         {
                             if(err)
                             {
-                                console.log("Error on update_photo_status_to_uploaded call.");
-                                req.flash('error', err);
+                                console.log("MySQL error on update_photo_status_to_uploaded call: " + err.code + " - " + err.message);
+                                // Render error page, passing in error data
+                                res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+                                return;
                             } else
                             {
-                                // Create Player worked, now upload photo
+                                // update_photo_status_to_uploaded worked, check return code
                                 console.log("update_photo_status_to_uploaded rpc worked");
 
                                 if (rows[0][0].phone != CALL_SUCCESS)
@@ -409,8 +444,10 @@ router.post('/activateAssassin', function(req, res, next)
   {
       if(err)
       {
-          console.log("Error on activate_player rpc call");
-          req.flash('error', err);
+          console.log("MySQL error on activate_player call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           console.log("Successful activate player RPC call, now check return code.");
@@ -460,8 +497,10 @@ router.post('/validateKill', function(req, res, next)
   dbConn.query('CALL `assassin-demo1`.`validate_kill`(?,?)', [req.body.myTeamCode, req.body.myKillName], function(err,rows)
   {
       if(err) {
-          console.log("Error on validate_kill call.");
-          req.flash('error', err);
+          console.log("MySQL error on validate_kill call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else {
           console.log("Successful RPC validate_kill call.");
           console.log(rows);
@@ -508,8 +547,10 @@ router.post('/rebuy', function(req, res, next)
   dbConn.query('CALL `assassin-demo1`.`rebuy`(?,?)', [req.body.myPlayerCode, req.body.myTeamCode], function(err,rows)
   {
       if(err) {
-          console.log("Error on rebuy");
-          req.flash('error', err);
+          console.log("MySQL error on rebuy call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       }
       else
       {
@@ -555,9 +596,12 @@ router.post('/goLive', function(req, res, next)
   // Call stored procedure
   dbConn.query('CALL `assassin-demo1`.`go_live`(?,?)', [req.body.myPlayerCode, req.body.myTeamCode], function(err,rows)
   {
-      if(err) {
-          console.log("Error on Go Live");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on go_live call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else {
           console.log("Successful Go Live RPC call.");
           console.log(rows);
@@ -612,9 +656,12 @@ router.post('/joinTeam', function(req, res, next)
   // Call stored procedure
   dbConn.query('CALL `assassin-demo1`.`join_team`(?,?)', [req.body.myPlayerCode, req.body.joinTeamCode], function(err,rows)
   {
-      if(err) {
-          console.log("Error on Join Team");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on join_team call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       }
       else
       {
@@ -667,12 +714,16 @@ router.post('/createTeam', function(req, res, next)
   // Call stored procedure
   dbConn.query('CALL `assassin-demo1`.`create_team`(?,?)', [req.body.myPlayerCode, req.body.playerTeamName], function(err,rows)
   {
-      if(err) {
-          console.log("Error on Create Team");
-          req.flash('error', err);
-      } else {
+      if(err)
+      {
+          console.log("MySQL error on create_team call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
+      }
+      else
+      {
           console.log("Successful Create Team RPC call.");
-
           console.log(rows);
 
           if (rows[0][0].phone == CALL_SUCCESS)
@@ -710,9 +761,12 @@ router.post('/takeBreak', function(req, res, next)
   // Call stored procedure, passing in LEAVE_BREAK
   dbConn.query('CALL `assassin-demo1`.`leave_game`(?,?,?)', [req.body.myPlayerCode, req.body.myTeamCode, LEAVE_BREAK], function(err,rows)
   {
-      if(err) {
-          console.log("Error on take break");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on leave_game call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           console.log("Successful take break RPC call.");
@@ -757,9 +811,12 @@ router.post('/returnFromBreak', function(req, res, next)
   // Call stored proc
   dbConn.query('CALL `assassin-demo1`.`return_from_break`(?,?)', [req.body.playerCode, req.body.teamCode], function(err,rows)
   {
-      if(err) {
-          console.log("Error on return from break");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on return_from_break call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           console.log("Successful return from break RPC call.");
@@ -801,7 +858,6 @@ router.post('/addPlayer', function(req, res, next)
       return;
   }
 
-  // if (!validateCode(req.body.addPlayerCode))
   if (!validateCode(req.body.playerCode))
   {
       console.log("Bad data found, routing to error page");
@@ -815,9 +871,12 @@ router.post('/addPlayer', function(req, res, next)
   // Call stored procedure
   dbConn.query('CALL `assassin-demo1`.`add_player_to_team`(?,?,?)', [req.body.myPlayerCode,req.body.myTeamCode,req.body.playerCode], function(err,rows)
   {
-      if(err) {
-          console.log("Error on add player");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on add_player_to_team call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else {
           console.log("Successful add player RPC call.");
           console.log(rows);
@@ -858,7 +917,6 @@ router.post('/removePlayerFromTeam', function(req, res, next)
       return;
   }
 
-  //if (!validateCode(req.body.removePlayerCode))
   if (!validateCode(req.body.playerCode))
   {
       console.log("Bad data found, routing to error page");
@@ -872,9 +930,12 @@ router.post('/removePlayerFromTeam', function(req, res, next)
   // Call stored proc
   dbConn.query('CALL `assassin-demo1`.`remove_player_from_team`(?,?,?)', [req.body.myPlayerCode,req.body.myTeamCode,req.body.playerCode], function(err,rows)
   {
-      if(err) {
-          console.log("Error on removePlayerFromTeam");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on remove_player_from_team call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       }
       else
       {
@@ -920,9 +981,12 @@ router.post('/quitGame', function(req, res, next)
   // leave_game stored proc handles both Quit and Break, send in quit here
   dbConn.query('CALL `assassin-demo1`.`leave_game`(?,?,?)', [req.body.myPlayerCode, req.body.myTeamCode, LEAVE_QUIT], function(err,rows)
   {
-      if(err) {
-          console.log("Error on quitGame");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on leave_game call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           console.log("Successful quitGame RPC call.");
@@ -963,11 +1027,11 @@ router.post('/managePicture', function(req, res, next)
       return;
   }
 
-  console.log(req.body.playerPic);
-  console.log(__dirname);
+// console.log(req.body.playerPic);
+//  console.log(__dirname);
 
-  var playerPicPath = "../../" + req.body.playerPic;
-  console.log(playerPicPath);
+  let tempPath = "../../" + req.body.playerPic;
+  var playerPicPath = tempPath.replace(/ /g, "%20");
 
   // No stored procedure needed, just load manage template
   res.render('managePicture', {playerCode: req.body.myPlayerCode, myPicture: playerPicPath, picFeature: req.body.picFeature});
@@ -1029,13 +1093,18 @@ router.post('/adminCreatePrepTemplateData', function(req, res, next)
   {
       if(err)
       {
-          console.log("error in adminCreatePrepTemplateData");
-          req.flash('error', err);
+          console.log("MySQL error on admin_create_prepped_teams call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           console.log("Successful adminCreatePrepTemplateData RPC call.");
           console.log(rows);
-          res.oidc.login(); // route back to login - may need to check return code zzz
+
+          // not going to do an addl layer of error checking here. If call worked, very little chance rpc didn't create the data
+          res.oidc.login();
+
       } // end else successful call
 
   });  // end stored procedure call
@@ -1068,6 +1137,7 @@ router.post('/adminActivateTeamPrep', function(req, res, next)
       return;
   }
 
+  // save for later use
   tempTeamCode = req.body.teamCode;
 
   // Retrieve prepped player codes
@@ -1075,8 +1145,10 @@ router.post('/adminActivateTeamPrep', function(req, res, next)
   {
       if(err)
       {
-          console.log("error in get_prepped_team_player_codes");
-          req.flash('error', err);
+          console.log("MySQL error on admin_get_prepped_team_player_codes call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           console.log("Successful get_prepped_team_player_codes RPC call.");
@@ -1131,21 +1203,12 @@ router.post('/adminActivateTeam', function(req, res, next)
 {
     console.log("Got into new adminActivateTeam call");
 
-    // Check authentication status
-    if (!req.oidc.isAuthenticated())
-    {
-        console.log("Not authenticated");
-        res.render('landing');
-        return;
-    }
-
-    // Possibly check for valid inputs here, but already filtered at ui level
-
     // helper vars for uploading photo files
     let playerPhotoFile;
     let uploadPath;
 
     // var helper files to prevent trying to send blank data to Node
+    var captPhone = "";
     var p2Code = 0;
     var p2Name = "";
     var p2Phone = "";
@@ -1158,38 +1221,162 @@ router.post('/adminActivateTeam', function(req, res, next)
     var p3Photo = "";
     var p3Celeb = "";
 
-    // prep player 2
-    if (Object.keys(req.files).length > 1)
+    // Check authentication status
+    if (!req.oidc.isAuthenticated())
     {
-        p2Code = req.body.player2Code;
-        p2Name = req.body.player2Name;
-        p2Phone = req.body.player2Phone;
-        p2Photo = req.files.player2PhotoFile.name;
-        p2Celeb = req.body.player2Celeb;
+        console.log("Not authenticated");
+        res.render('landing');
+        return;
     }
 
-    // prep player 3
-    if (Object.keys(req.files).length > 2)
+    // Full check based on the number of IDs passed in, not the number of files.
+    // If an id was passed in, then the player's data must be entered
+    // Always need to check for captain data
+    if (!validateCode(req.body.captainCode))
     {
-        p3Code = req.body.player3Code;
+        console.log("Bad playerCode data found in adminActivateTeam, routing to error page");
+
+        // Render error page, passing in error code
+        res.render('errorMessagePage', {result: ERROR_INVALID_PLAYER_OR_TEAM_CODE_FORMAT});
+        return;
+    }
+
+    // validate team name
+    if (validateString(req.body.teamName) == false)
+    {
+        // Render error page, passing in error code
+        res.render('errorMessagePage', {result: ERROR_INVALID_TEAM_NAME});
+        return;
+    }
+
+    // validate captain name
+    if (validateString(req.body.captainName) == false)
+    {
+        // Render error page, passing in error code
+        res.render('errorMessagePage', {result: ERROR_INVALID_PLAYER_NAME});
+        return;
+    }
+
+    if (req.body.captainPhone != "")
+    {
+        console.log("Captain phone not blank");
+        captPhone = validatePhone(req.body.captainPhone); // comes back formatted
+
+        if (captPhone == null)
+        {
+            console.log("Captain phone not null.");
+            // Render error page, passing in error code
+            res.render('errorMessagePage', {result: ERROR_INVALID_PHONE_NUMBER});
+            return;
+        }
+
+    }
+
+    // After captain, check for files
+    // Check if photo file was passed in correctly - If not files, return immediately
+    if (!req.files || Object.keys(req.files).length === 0)
+    {
+        res.render('errorMessagePage', {result: ERROR_NO_FILE_UPLOADED});
+        return;
+    }
+
+    // if capt file empty, return immediately
+    if (req.files.captainPhotoFile == null)
+    {
+      res.render('errorMessagePage', {result: ERROR_NO_FILE_UPLOADED});
+      return;
+    }
+    else
+    {
+          // if p2 code passed in, but no file, return immediately
+          if ((req.body.player2Code != "")  && (req.files.player2PhotoFile == null))
+          {
+            res.render('errorMessagePage', {result: ERROR_NO_FILE_UPLOADED});
+            return;
+          }
+          else
+          {
+                // if p3 code passed in, but no file, return immediately
+                if ((req.body.player3Code != "")  && (req.files.player3PhotoFile == null))
+                {
+                  res.render('errorMessagePage', {result: ERROR_NO_FILE_UPLOADED});
+                  return;
+                }
+          }
+
+    } // end file check -------------------------
+
+    // keep checking or update above to check names too
+    if (req.body.player2Code != "")
+    {
+        if (validateString(req.body.player2Name) == false)
+        {
+            // Render error page, passing in error code
+            res.render('errorMessagePage', {result: ERROR_INVALID_PLAYER_NAME});
+            return;
+        }
+
+        if (req.body.player2Phone != "")
+        {
+            p2Phone = validatePhone(req.body.player2Phone); // comes back formatted
+
+            if (p2Phone == null)
+            {
+                // Render error page, passing in error code
+                res.render('errorMessagePage', {result: ERROR_INVALID_PHONE_NUMBER});
+                return;
+            }
+        }
+
+        p2Name = req.body.player2Name; // name is good here or we would have returned
+        p2Code = req.body.player2Code;
+        p2Photo = req.files.player2PhotoFile.name;
+        p2Celeb = req.body.player2Celeb;
+
+    }
+
+    // check player 3 name and phone
+    if (req.body.player3Code != "")
+    {
+
+        // validate p3 name
+        if (validateString(req.body.player3Name) == false)
+        {
+            // Render error page, passing in error code
+            res.render('errorMessagePage', {result: ERROR_INVALID_PLAYER_NAME});
+            return;
+        }
+
+        if (req.body.player3Phone != "")
+        {
+            p3Phone = validatePhone(req.body.player3Phone); // comes back formatted
+
+            if (p3Phone == null)
+            {
+                // Render error page, passing in error code
+                res.render('errorMessagePage', {result: ERROR_INVALID_PHONE_NUMBER});
+                return;
+            }
+
+        }
+
         p3Name = req.body.player3Name;
-        p3Phone = req.body.player3Phone;
+        p3Code = req.body.player3Code;
         p3Photo = req.files.player3PhotoFile.name;
         p3Celeb = req.body.player3Celeb;
     }
 
-    // Check if photo file was passed in correctly
-    if (!req.files || Object.keys(req.files).length === 0) {
-      return res.status(400).send('No files were uploaded.');
-    }
+    // error checking complete ---------------------------------------------------
 
     // Call stored procedure to activate the Team, if call succeeds, upload photos
-    dbConn.query('CALL `assassin-demo1`.`admin_activate_team`(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [req.body.activatedTeamCode, req.body.teamName, req.body.captainCode, req.body.captainName, req.body.captainPhone, req.files.captainPhotoFile.name, req.body.captainCeleb, p2Code, p2Name, p2Phone, p2Photo, p2Celeb, p3Code, p3Name, p3Phone, p3Photo, p3Celeb], function(err,rows)
+    dbConn.query('CALL `assassin-demo1`.`admin_activate_team`(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [req.body.activatedTeamCode, req.body.teamName, req.body.captainCode, req.body.captainName, captPhone, req.files.captainPhotoFile.name, req.body.captainCeleb, p2Code, p2Name, p2Phone, p2Photo, p2Celeb, p3Code, p3Name, p3Phone, p3Photo, p3Celeb], function(err,rows)
     {
         if(err)
         {
-            console.log("Error on admin_activate_team call.");
-            req.flash('error', err);
+            console.log("MySQL error on admin_activate_team call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         } else
         {
             // admin_activate_team worked
@@ -1215,8 +1402,11 @@ router.post('/adminActivateTeam', function(req, res, next)
             {
                 if (err)
                 {
-                  console.log("Error on captain file upload");
-                  return res.status(500).send(err);
+                  // zzz
+                  console.log("File upload error for captain in admin_activate_team call: " + err.code + " - " + err.message);
+                  // Render error page, passing in error data
+                  res.render('errorMessagePage', {result: ERROR_ON_FILE_UPLOAD});
+                  return;
                 }
                 else
                 {
@@ -1235,8 +1425,11 @@ router.post('/adminActivateTeam', function(req, res, next)
                         {
                             if (err)
                             {
-                              console.log("Error on player 2 file upload");
-                              return res.status(500).send(err);
+                              // zzz
+                              console.log("File upload error for player 2 in admin_activate_team call: " + err.code + " - " + err.message);
+                              // Render error page, passing in error data
+                              res.render('errorMessagePage', {result: ERROR_ON_FILE_UPLOAD});
+                              return;
                             }
                             else
                             {
@@ -1255,8 +1448,11 @@ router.post('/adminActivateTeam', function(req, res, next)
                                     {
                                         if (err)
                                         {
-                                          console.log("Error on player 3 file upload");
-                                          return res.status(500).send(err);
+                                          // zzz
+                                            console.log("File upload error for player 3 in admin_activate_team call: " + err.code + " - " + err.message);
+                                            // Render error page, passing in error data
+                                            res.render('errorMessagePage', {result: ERROR_ON_FILE_UPLOAD});
+                                            return;
                                         }
                                         else
                                         {
@@ -1311,17 +1507,34 @@ router.post('/adminSearchForTeam', function(req, res, next)
     var tempPlayerCode = 0;
     var tempTeamName = "";
     var tempPlayerName = "";
+    var atLeastOneInput = false;
 
-    // error checking, format of input text, and all not blank zzz
+    // start error checking
 
-    if (req.body.teamCode != "")
-    {
-        tempTeamCode = req.body.teamCode;
-    }
-
-    if (req.body.playerCode != "")
+    if (validateCode(req.body.playerCode))
     {
         tempPlayerCode = req.body.playerCode;
+        atLeastOneInput = true;
+    }
+
+    if (validateCode(req.body.teamCode))
+    {
+        tempTeamCode = req.body.teamCode;
+        atLeastOneInput = true;
+    }
+
+    if (((req.body.teamName != "") && (validateString(req.body.teamName) == true))
+          ||
+        ((req.body.playerName != "") && (validateString(req.body.playerName) == true)))
+    {
+      atLeastOneInput = true;
+    }
+
+    if (atLeastOneInput == false)
+    {
+      // Render error page, passing in error code
+      res.render('errorMessagePage', {result: ERROR_AT_LEAST_ONE_INPUT_REQUIRED});
+      return;
     }
 
     // Call stored procedure to search for the team
@@ -1329,8 +1542,10 @@ router.post('/adminSearchForTeam', function(req, res, next)
     {
         if(err)
         {
-            console.log("Error on search_for_team call.");
-            req.flash('error', err);
+            console.log("MySQL error on admin_search_for_team call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         } else
         {
             // admin_search_for_team rpc worked
@@ -1402,37 +1617,52 @@ router.post('/adminSearchForPlayer', function(req, res, next)
     var tempPlayerName = "";
     var tempPlayerCode = 0;
     var tempTeamCode = 0;
-    var playerPicPath;
+    var playerPicPath; // helper var to replace any spaces from file names with code
+    var atLeastOneInput = false;
 
-    // error checking here, same as teams zzz
-
-    if (req.body.teamName != "")
-    {
-        tempTeamName = req.body.teamName;
-    }
-
-    if (req.body.playerName != "")
-    {
-        tempPlayerName = req.body.playerName;
-    }
-
-    if (req.body.playerCode != "")
+    // start error checking
+    if (validateCode(req.body.playerCode))
     {
         tempPlayerCode = req.body.playerCode;
+        atLeastOneInput = true;
     }
 
-    if (req.body.teamCode != "")
+    if (validateCode(req.body.teamCode))
     {
         tempTeamCode = req.body.teamCode;
+        atLeastOneInput = true;
     }
+
+    if ((req.body.playerName != "") && (validateString(req.body.playerName) == true))
+    {
+      atLeastOneInput = true;
+      tempPlayerName = req.body.playerName;
+    }
+
+    if ((req.body.teamName != "") && (validateString(req.body.teamName) == true))
+    {
+      atLeastOneInput = true;
+      tempTeamName = req.body.teamName;
+    }
+
+    if (atLeastOneInput == false)
+    {
+      // Render error page, passing in error code
+      res.render('errorMessagePage', {result: ERROR_AT_LEAST_ONE_INPUT_REQUIRED});
+      return;
+    }
+
+    // end error checking  --------------
 
     // Call stored procedure to search for the player
     dbConn.query('CALL `assassin-demo1`.`admin_search_for_player`(?,?,?,?)', [tempTeamName, tempPlayerName, tempPlayerCode, tempTeamCode], function(err,rows)
     {
         if(err)
         {
-            console.log("Error on adminSearchForPlayer call.");
-            req.flash('error', err);
+            console.log("MySQL error on admin_search_for_player call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         } else
         {
             // adminSearchForPlayer worked, now inspect data
@@ -1445,7 +1675,8 @@ router.post('/adminSearchForPlayer', function(req, res, next)
 
             if (rows[0].length == 1)
             {
-                playerPicPath = "../../" + rows[0][0]['player-pic'];
+                let tempPath = "photos/" + rows[0][0]['player-pic'];
+                playerPicPath = tempPath.replace(/ /g, "%20");
 
                 res.render('adminPlayerHome',
                 {
@@ -1510,8 +1741,10 @@ router.post('/adminApprovePicture', function(req, res, next)
     {
         if(err)
         {
-            console.log("Error on adminApprovePicture call.");
-            req.flash('error', err);
+            console.log("MySQL error on admin_approve_picture call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         } else
         {
             // adminApprovePicture worked
@@ -1563,8 +1796,10 @@ router.post('/adminRejectPicture', function(req, res, next)
     {
         if(err)
         {
-            console.log("Error on adminRejectPicture call.");
-            req.flash('error', err);
+            console.log("MySQL error on admin_reject_picture call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         } else
         {
             // adminRejectPicture worked
@@ -1646,14 +1881,14 @@ router.post('/uploadPhoto', function(req, res, next)
     {
         if(err)
         {
-            console.log("Error on uploadPhoto data call.");
-            req.flash('error', err);
+            console.log("MySQL error on upload_photo_data call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         } else
         {
             //  upload photo data worked
             console.log("upload_photo_data rpc worked, now upload photo.");
-
-            // need real error checking here zzz - check return code
 
             if (rows[0][0].phone != CALL_SUCCESS)
             {
@@ -1673,8 +1908,11 @@ router.post('/uploadPhoto', function(req, res, next)
             {
                 if (err)
                 {
-                  console.log("Error on photo file upload");
-                  return res.status(500).send(err);
+                  // zzz
+                  console.log("File upload error in upload_photo_data call: " + err.code + " - " + err.message);
+                  // Render error page, passing in error data
+                  res.render('errorMessagePage', {result: ERROR_ON_FILE_UPLOAD});
+                  return;
                 }
                 else
                 {
@@ -1700,9 +1938,6 @@ router.post('/adminPayBounties', function(req, res, next)
 
   var tempBounties = parseInt(req.body.numBounties);
 
-  console.log(tempBounties);
-  console.log(Number.isInteger(tempBounties));
-
   // Check authentication status
   if (!req.oidc.isAuthenticated())
   {
@@ -1723,8 +1958,10 @@ router.post('/adminPayBounties', function(req, res, next)
   {
       if(err)
       {
-          console.log("Error on admin_pay_bounties call.");
-          req.flash('error', err);
+          console.log("MySQL error on admin_pay_bounties call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           // Create Player worked, now upload photo
@@ -1767,8 +2004,10 @@ router.post('/adminMarkPaid', function(req, res, next)
   {
       if(err)
       {
-          console.log("Error on adminMarkPaid call.");
-          req.flash('error', err);
+          console.log("MySQL error on admin_mark_paid call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           // adminMarkPaid worked
@@ -1817,8 +2056,10 @@ router.post('/adminMarkPaidAndApprovePhoto', function(req, res, next)
   {
       if(err)
       {
-          console.log("Error on adminMarkPaid call.");
-          req.flash('error', err);
+          console.log("MySQL error on admin_mark_paid call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           // adminMarkPaid worked, now check return code and call approve pic
@@ -1834,8 +2075,10 @@ router.post('/adminMarkPaidAndApprovePhoto', function(req, res, next)
               {
                   if(err)
                   {
-                      console.log("Error on adminApprovePicture call.");
-                      req.flash('error', err);
+                      console.log("MySQL error on admin_approve_picture call: " + err.code + " - " + err.message);
+                      // Render error page, passing in error data
+                      res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+                      return;
                   } else
                   {
                       // adminApprovePicture worked, check return code
@@ -1924,21 +2167,36 @@ router.post('/adminUpdatePlayerData', function(req, res, next)
       return;
   }
 
-  console.log(tempCeleb);
+  if (validateString(req.body.playerName) == false)
+  {
+      // Render error page, passing in error code
+      res.render('errorMessagePage', {result: ERROR_INVALID_PLAYER_NAME});
+      return;
+  }
 
   // Call stored procedure
   dbConn.query('CALL `assassin-demo1`.`admin_update_player_data`(?,?,?,?)', [req.body.playerCode, req.body.playerName, tempPlayerPhone, tempCeleb], function(err,rows)
   {
-      if(err) {
-          console.log("Error on update_player_data");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on admin_update_player_data call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else {
           console.log("Successful update_player_data RPC call.");
           console.log(rows);
 
-          // should check return code here zzz
-
-          res.oidc.login(); // send back home to refresh page
+          if (rows[0][0].phone == CALL_SUCCESS)
+          {
+              res.oidc.login(); // send back home to refresh page
+          }
+          else
+          {
+              // Render error page, passing in error code
+              res.render('errorMessagePage', {result: parseInt(rows[0][0].phone)});
+              return;
+          }
 
       } // end else
 
@@ -1962,21 +2220,38 @@ router.post('/adminUpdateTeamName', function(req, res, next)
       return;
   }
 
-  // Check team name format here zzz ?
+  // validate team name
+  if (validateString(req.body.teamName) == false)
+  {
+      // Render error page, passing in error code
+      res.render('errorMessagePage', {result: ERROR_INVALID_TEAM_NAME});
+      return;
+  }
 
   // Call stored procedure
   dbConn.query('CALL `assassin-demo1`.`admin_update_team_name`(?,?)', [req.body.teamCode, req.body.teamName], function(err,rows)
   {
-      if(err) {
-          console.log("Error on admin_update_team_name");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on admin_update_team_name call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else {
           console.log("Successful admin_update_team_name RPC call.");
           console.log(rows);
 
-          //  should check return code here zzz
+          if (rows[0][0].phone == CALL_SUCCESS)
+          {
+              res.oidc.login(); // send back home to refresh page
+          }
+          else
+          {
+              // Render error page, passing in error code
+              res.render('errorMessagePage', {result: parseInt(rows[0][0].phone)});
+              return;
+          }
 
-          res.oidc.login(); // send back home to refresh page
       } // end else
 
   }); // end query
@@ -2047,14 +2322,15 @@ router.post('/updatePlayerPhone', function(req, res, next)
       return;
   }
 
-  console.log(req.body.playerCode);
-
   // Call stored procedure
   dbConn.query('CALL `assassin-demo1`.`update_player_phone`(?,?)', [req.body.playerCode, tempPlayerPhone], function(err,rows)
   {
-      if(err) {
-          console.log("Error on updatePlayerPhone");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on update_player_phone call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           console.log("Successful updatePlayerPhone RPC call.");
@@ -2095,9 +2371,12 @@ router.post('/removePlayerPhoneNumber', function(req, res, next)
   // Call stored procedure
   dbConn.query('CALL `assassin-demo1`.`remove_player_phone`(?)', req.body.myPlayerCode, function(err,rows)
   {
-      if(err) {
-          console.log("Error on removePlayerPhone");
-          req.flash('error', err);
+      if(err)
+      {
+          console.log("MySQL error on remove_player_phone call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           console.log("Successful removePlayerPhone RPC call.");
@@ -2159,20 +2438,22 @@ router.post('/adminDropBomb', function(req, res, next)
   {
       if(err)
       {
-          console.log("Error on adminDropBomb call.");
-          req.flash('error', err);
+          console.log("MySQL error on admin_drop_bomb call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           // adminDropBomb worked
           console.log("adminDropBomb rpc worked.");
           console.log(rows);
 
-          // check return code here zzz
-
+          // No addl error checking if call succeeded.  First row is success code, then phone #'s'
           if (rows[0].length > 1)
           {
               send_text_alerts(rows);
           }
+
           res.oidc.login();
 
       } // end else
@@ -2207,9 +2488,11 @@ router.post('/systemCheckForceShiftChange', function(req, res, next)
   dbConn.query('CALL `assassin-demo1`.`system_check_for_forced_shift_changes`(?)', req.body.hoursToGo, function(err,rows)
   {
       if(err)
-      {
-          console.log("Error on system_check_for_forced_shift_changes call.");
-          req.flash('error', err);
+      {   // zzz - ui?
+          console.log("MySQL error on system_check_for_forced_shift_changes call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           // Create Player worked, now upload photo
@@ -2257,8 +2540,10 @@ router.post('/resetDatabase', function(req, res, next)
   {
       if(err)
       {
-          console.log("Error on resetDatabase call.");
-          req.flash('error', err);
+          console.log("MySQL error on reset_database call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           // resetDatabase worked
@@ -2279,8 +2564,124 @@ router.post('/test', function(req, res, next)
 
 }); // end test
 
+
+// -------------------------------------------------------------
+// viewRules called by player to view the Assassin game rule
+
+router.post('/viewRules', function(req, res, next)
+{
+    console.log("Got into viewRules call");
+
+    // Check authentication status
+    if (!req.oidc.isAuthenticated())
+    {
+        console.log("Not authenticated");
+        res.render('landing');
+        return;
+    }
+
+    // No stored procedure needed, just display rules page
+    res.render('rules');
+
+});  // end router - viewRules
+
+// --------------------------------------------------------------------------------
+// Route called by player to start the contact admin process
+// ---------------------------------------------------------------------------------
+router.post('/contactAdmin', function(req, res, next)
+{
+    console.log("Got into contactAdmin");
+
+    // Check authentication status
+    if (!req.oidc.isAuthenticated())
+    {
+        console.log("Not authenticated");
+        res.render('landing');
+        return;
+    }
+
+    res.render('contactAdmin', {playerCode: req.body.myPlayerCode, playerName: req.body.myPlayerName, playerPhone: req.body.myPhone });
+
+}); // end router post contactAdmin
+
+// --------------------------------------------------------------------------------
+// Route called by player to process and send message to admin
+// --------------------------------------------------------------------------------
+router.post('/sendAdminMessage', function(req, res, next)
+{
+    console.log("Got into sendAdminMessage");
+    console.log(req.body);
+
+    // Check authentication status
+    if (!req.oidc.isAuthenticated())
+    {
+        console.log("Not authenticated");
+        res.render('landing');
+        return;
+    }
+
+    // First get admin phone number
+    dbConn.query('CALL `assassin-demo1`.`get_admin_phone_number`()', function(err,rows)
+    {
+        if(err)
+        {
+            console.log("MySQL error on get_admin_phone_number call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
+        } else
+        {
+            console.log("get_admin_phone_number rpc worked.");
+
+            // zzz maybe some error checking here
+
+            var tempPlayerPhone = validatePhone(req.body.playerPhone); // comes back formatted
+
+            if (tempPlayerPhone == null)
+            {
+                tempPlayerPhone = "";
+            }
+
+            // Combine all info into 1 text for admin
+            var tempMessage = req.body.playerName + " - " + req.body.playerCode + " - " +  req.body.message + " - " + tempPlayerPhone;
+
+            // Send text
+            twilio.messages.create(
+              {
+                 body: tempMessage,
+                 from: CREDENTIALS.TWILIO_PHONE_NUMBER,
+                 to: rows[0][0].adminPhone
+              })
+            .then(message => console.log("Twilio return sid: " + message.sid));
+
+            // Log event to DB just in case Admin doesn't get the text
+            dbConn.query('CALL `assassin-demo1`.`log_event`(?,?,?,?,?,?)', [EVENT_ADMIN_MESSAGE, req.body.playerCode, 0, 0, 0, 0], function(err,rows)
+            {
+                if(err)
+                {
+                    console.log("MySQL error on log_admin_message_event call: " + err.code + " - " + err.message);
+                } else
+                {
+                    console.log("Successful log_admin_message_event RPC call.");
+                } // end else
+
+            }); // end query
+
+        } // end else
+
+    }); // end query
+
+    // Route user back to Home via login
+    res.oidc.login();
+
+}); // end router post sendAdminMessage
+
+// -------------------------------------------------------------
+// Start Helper function section - Not express routes ----------
 // -------------------------------------------------------------
 
+// ---------------------------------------------------
+// Function sends texts to the phone numbers passed in
 function send_text_alerts(rows)
 {
   console.log("Got into send text alerts -------------");
@@ -2401,7 +2802,7 @@ function send_text_alerts(rows)
       // twilio.messages
       //   .create({
       //      body: decodedMessage,
-      //      from: '+13204001605',
+      //      from: CREDENTIALS.TWILIO_PHONE_NUMBER,
       //      to: rows[0][i+1].phone
       //  })
       // .then(message => console.log(message.sid));
@@ -2418,8 +2819,10 @@ function checkForUploadedPhotos(res)
   {
       if(err)
       {
-          console.log("Error on bulk picture approve call.");
-          req.flash('error', err);
+          console.log("MySQL error on admin_get_first_uploaded_photo_and_count call: " + err.code + " - " + err.message);
+          // Render error page, passing in error data
+          res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+          return;
       } else
       {
           // bulk picture approve worked
@@ -2428,7 +2831,7 @@ function checkForUploadedPhotos(res)
           if (rows[0][0].numUploadedPhotos > 0)
           {
             console.log("At least 1 photo to review.")
-            res.render('adminBulkPictureApprove', {playerCode: rows[0][0].playerCode, playerName: rows[0][0].playerName, photoFilename: rows[0][0].photoFilename});
+            res.render('adminBulkPictureApprove', {playerCode: rows[0][0].playerCode, playerName: rows[0][0].playerName, photoFilename: "photos/" + rows[0][0].photoFilename});
           }
           else
           {
@@ -2538,9 +2941,11 @@ router.post('/cronManager', function(req, res, next)
     dbConn.query('CALL `assassin-demo1`.`system_get_game_settings_for_cron`()', function(err,rows)
     {
         if(err)
-        {
-            console.log("Error on system_get_game_settings_for_cron call.");
-            req.flash('error', err);
+        { // zzz
+            console.log("MySQL error on system_get_game_settings_for_cron call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         } else
         {
             // system_get_game_settings_for_cron worked
@@ -2620,6 +3025,13 @@ router.post('/systemStartCronScripts', function(req, res, next)
       // parse start date into cron scheduler format
       var tempDate = new Date(req.body.startGameTimestamp);
 
+      if(isNaN(tempDate.getTime()))
+      {
+          // Render error page, passing in error code
+          res.render('errorMessagePage', {result: ERROR_INVALID_DATE});
+          return;
+      }
+
       var minute = tempDate.getMinutes();
       var hour = tempDate.getHours();
       var day = tempDate.getDate();
@@ -2646,6 +3058,13 @@ router.post('/systemStartCronScripts', function(req, res, next)
       // parse start date into cron scheduler format
       var tempDate = new Date(req.body.endGameTimestamp);
 
+      if(isNaN(tempDate.getTime()))
+      {
+          // Render error page, passing in error code
+          res.render('errorMessagePage', {result: ERROR_INVALID_DATE});
+          return;
+      }
+
       var minute = tempDate.getMinutes();
       var hour = tempDate.getHours();
       var day = tempDate.getDate();
@@ -2669,6 +3088,14 @@ router.post('/systemStartCronScripts', function(req, res, next)
       console.log("morningStartCheckbox is on");
 
       var tempDate = new Date(req.body.startGameTimestamp);
+
+      if(isNaN(tempDate.getTime()))
+      {
+          // Render error page, passing in error code
+          res.render('errorMessagePage', {result: ERROR_INVALID_DATE});
+          return;
+      }
+
       var hour = req.body.morningStartTime;
       var day = (tempDate.getDate()+1) + "-" + (tempDate.getDate()+3);  // mornings June 23 - 25
       var month = tempDate.getMonth()+1;
@@ -2692,6 +3119,14 @@ router.post('/systemStartCronScripts', function(req, res, next)
       console.log("nightEndCheckbox is on");
 
       var tempDate = new Date(req.body.startGameTimestamp);
+
+      if(isNaN(tempDate.getTime()))
+      {
+          // Render error page, passing in error code
+          res.render('errorMessagePage', {result: ERROR_INVALID_DATE});
+          return;
+      }
+
       var hour = req.body.nightEndTime;
       var day = (tempDate.getDate()) + "-" + (tempDate.getDate()+2);  // nights 22 - 24
       var month = tempDate.getMonth()+1;
@@ -2715,6 +3150,14 @@ router.post('/systemStartCronScripts', function(req, res, next)
       console.log("twoHoursToGoCheckbox is on");
 
       var tempDate = new Date(req.body.startGameTimestamp);
+
+      if(isNaN(tempDate.getTime()))
+      {
+          // Render error page, passing in error code
+          res.render('errorMessagePage', {result: ERROR_INVALID_DATE});
+          return;
+      }
+
       var hour = req.body.nightEndTime - 2;
       var day = (tempDate.getDate()) + "-" + (tempDate.getDate()+3);  // nights 22 - 25
       var month = tempDate.getMonth()+1;
@@ -2738,6 +3181,14 @@ router.post('/systemStartCronScripts', function(req, res, next)
       console.log("oneHourToGoCheckbox is on");
 
       var tempDate = new Date(req.body.startGameTimestamp);
+
+      if(isNaN(tempDate.getTime()))
+      {
+          // Render error page, passing in error code
+          res.render('errorMessagePage', {result: ERROR_INVALID_DATE});
+          return;
+      }
+
       var hour = req.body.nightEndTime - 1;
       var day = (tempDate.getDate()) + "-" + (tempDate.getDate()+3);  // nights 22 - 25
       var month = tempDate.getMonth()+1;
@@ -2760,6 +3211,13 @@ router.post('/systemStartCronScripts', function(req, res, next)
     {
       console.log("checkHowManyPhotosCheckbox is on");
 
+      if (!Number.isInteger(req.body.checkHowManyPhotos) || (req.body.checkHowManyPhotos <= 0))
+      {
+          // Render error page, passing in error code
+          res.render('errorMessagePage', {result: ERROR_INVALID_INTEGER_INPUT});
+          return;
+      }
+
       if (CRON_CHECK_MANY_PHOTOS_SCRIPT_RUNNING == 0)
       {
           CRON_CHECK_MANY_PHOTOS_SCRIPT_RUNNING = 1;
@@ -2772,6 +3230,13 @@ router.post('/systemStartCronScripts', function(req, res, next)
     if (req.body.checkOldPhotosCheckbox == "on")
     {
       console.log("checkOldPhotosCheckbox is on");
+
+      if (!Number.isInteger(req.body.checkOldPhotosCheckbox) || (req.body.checkOldPhotosCheckbox <= 0))
+      {
+          // Render error page, passing in error code
+          res.render('errorMessagePage', {result: ERROR_INVALID_INTEGER_INPUT});
+          return;
+      }
 
       if (CRON_CHECK_OLD_PHOTOS_SCRIPT_RUNNING == 0)
       {
@@ -2795,9 +3260,12 @@ function startGameCronFunction()
     // call stored procedure
     dbConn.query('CALL `assassin-demo1`.`system_start_game`()', function(err,rows)
     {
-        if(err) {
-            console.log("Error on startGameCronFunction");
-            req.flash('error', err);
+        if(err)
+        {   // zzz
+            console.log("MySQL error on system_start_game call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         }
         else
         {
@@ -2834,9 +3302,12 @@ function endGameCronFunction()
     // call stored procedure
     dbConn.query('CALL `assassin-demo1`.`system_end_game`()', function(err,rows)
     {
-        if(err) {
-            console.log("Error on endGameCronFunction");
-            req.flash('error', err);
+        if(err)
+        { // zzz
+            console.log("MySQL error on system_end_game call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         }
         else
         {
@@ -2873,9 +3344,12 @@ function morningStartCronFunction()
     // call stored procedure
     dbConn.query('CALL `assassin-demo1`.`system_morning_start`()', function(err,rows)
     {
-        if(err) {
-            console.log("Error on morningStartCronFunction");
-            req.flash('error', err);
+        if(err)
+        {
+            console.log("MySQL error on system_morning_start call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         }
         else
         {
@@ -2911,9 +3385,12 @@ function nightEndCronFunction()
     // call stored procedure
     dbConn.query('CALL `assassin-demo1`.`system_night_end`()', function(err,rows)
     {
-        if(err) {
-            console.log("Error on nightEndCronFunction");
-            req.flash('error', err);
+        if(err)
+        {
+            console.log("MySQL error on system_night_end call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         }
         else
         {
@@ -2949,9 +3426,12 @@ function twoHoursToGoCronFunction()
     // call stored procedure
     dbConn.query('CALL `assassin-demo1`.`system_check_for_forced_shift_changes`(?)',2, function(err,rows)
     {
-        if(err) {
-            console.log("Error on twoHoursToGoCronFunction");
-            req.flash('error', err);
+        if(err)
+        {
+            console.log("MySQL error on system_check_for_forced_shift_changes call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         }
         else
         {
@@ -2987,9 +3467,12 @@ function oneHourToGoCronFunction()
     // call stored procedure
     dbConn.query('CALL `assassin-demo1`.`system_check_for_forced_shift_changes`(?)',1, function(err,rows)
     {
-        if(err) {
-            console.log("Error on oneHourToGoCronFunction");
-            req.flash('error', err);
+        if(err)
+        {
+            console.log("MySQL error on system_check_for_forced_shift_changes call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         }
         else
         {
@@ -3026,9 +3509,12 @@ function checkHowManyPhotosCronFunction(maxPhotos)
     // call stored procedure
     dbConn.query('CALL `assassin-demo1`.`system_check_how_many_photos`()', function(err,rows)
     {
-        if(err) {
-            console.log("Error on checkHowManyPhotosCronFunction");
-            req.flash('error', err);
+        if(err)
+        {
+            console.log("MySQL error on system_check_how_many_photos call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         }
         else
         {
@@ -3043,7 +3529,7 @@ function checkHowManyPhotosCronFunction(maxPhotos)
               // twilio.messages
               // .create({
               //      body: rows[0][0].numPhotosWaiting + " photos require approval."
-              //      from: '+13204001605',
+              //      from: CREDENTIALS.TWILIO_PHONE_NUMBER,
               //      to: rows[0][0].adminPhone
               //  })
               // .then(message => console.log(message.sid));
@@ -3065,9 +3551,12 @@ function checkOldPhotosCronFunction(photoWaitTime)
     // call stored procedure
     dbConn.query('CALL `assassin-demo1`.`system_check_old_photos`(?)', photoWaitTime, function(err,rows)
     {
-        if(err) {
-            console.log("Error on checkOldPhotosCronFunction");
-            req.flash('error', err);
+        if(err)
+        {
+            console.log("MySQL error on system_check_old_photos call: " + err.code + " - " + err.message);
+            // Render error page, passing in error data
+            res.render('errorMessagePage', {result: ERROR_MYSQL_SYSTEM_ERROR_ON_RPC});
+            return;
         }
         else
         {
@@ -3083,7 +3572,7 @@ function checkOldPhotosCronFunction(photoWaitTime)
               // twilio.messages
               // .create({
               //      body: rows[0][0].checkOldPhotos + " old photos require approval."
-              //      from: '+13204001605',
+              //      from: CREDENTIALS.TWILIO_PHONE_NUMBER,
               //      to: rows[0][0].adminPhone
               //  })
               // .then(message => console.log(message.sid));
