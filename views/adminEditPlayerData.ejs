@@ -23,13 +23,15 @@
       <form autocomplete="off" action="adminUpdatePlayerData" method="post" encType="multipart/form-data">
           <input type="hidden" name="playerCode" value="<%= playerCode %>">
 					<div style="height: 10px;"></div>
-          Player Name: <input type="search" size="12" name="playerName" value="<%= playerName %>" autocomplete="off">
+          Player Name: &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<input type="search" size="12" name="playerName" value="<%= playerName %>" autocomplete="off">
 					<div style="height: 14px;"></div>
           Player Phone Number: <input type="search" size="12" name="playerPhone" value="<%= playerPhone %>" autocomplete="off">
 					<div style="height: 14px;"></div>
           Celebritarian: <input type="checkbox" name="celebritarian" <% if (celebritarian == 1) {%> checked <%} else {%> unchecked <%}%>>
 					<div style="height: 14px;"></div>
           <input type="submit" class="btn btn-info" value="Update Player Data"/>
+					&nbsp&nbsp&nbsp&nbsp
+					<input type="submit" class="btn btn-info" formaction="assassinLogin" value="Home"/>
 					<div style="height: 6px;"></div>
         </form>
 

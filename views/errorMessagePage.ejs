@@ -9,10 +9,6 @@
 	<script src="javascripts/utilities.js"></script>
 </head>
 
-<% if (messages.error) { %>
-<div class="alert alert-danger" role="alert"><%- messages.error %></div>
-<% } %>
-
 <body class="container" style="margin-top: 10px;">
 
   <div class="card" style="width:21rem;">
@@ -28,6 +24,13 @@
 
       <% 	switch(result)
           {
+						case ERROR_MYSQL_SYSTEM_ERROR_ON_RPC:
+								%>
+									System Error. Please logout, close your browser, and try logging back in. If the error persists, please contact the Admin.
+									<br>
+								<%
+								break;
+
               case ERROR_ALREADY_REGISTERED:
                   %>
                     You are already Registered.
@@ -226,8 +229,48 @@
 									<%
 									break;
 
+						case ERROR_AT_LEAST_ONE_INPUT_REQUIRED:
+									%>
+											At least 1 valid input is required.
+									<br>
+									<%
+									break;
+
+						case ERROR_INVALID_DATE:
+									%>
+											Invalid date.
+									<br>
+									<%
+									break;
+
+						case ERROR_INVALID_INTEGER_INPUT:
+									%>
+											Invalid integer input.
+									<br>
+									<%
+									break;
+
+						case ERROR_ON_FILE_UPLOAD:
+									%>
+											Error on file upload.
+									<br>
+									<%
+									break;
+
+						case ERROR_FEATURE_UNAVAILABLE_OVERNIGHT:
+									%>
+											This feature is unavailable during overnight break.
+									<br>
+									<%
+									break;
+
               default:
-                // code block
+							%>
+									System Error. Please logout, close your browser, and try logging back in. If the error persists, please contact the Admin.<%= result %>
+							<br>
+							<%
+							break;
+
           }
 
       %>

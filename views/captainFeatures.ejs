@@ -41,18 +41,18 @@
                     <%}%>
 
                         <div style="height: 12px;"></div>
-                        <input type="text" size="7" name="playerCode" autocomplete="off">
+                        <input type="search" size="7" name="playerCode" autocomplete="off">
                         &nbsp&nbsp&nbsp
                         <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
                         <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
-                        <input type="submit" class="btn btn-info" value="Remove"/>
-                        &nbsp&nbsp&nbsp
 
                         <% if (numTeammates < 2)	{%>
 
                             <input type="submit" class="btn btn-info" formaction="addPlayer" value="Add"/>
-
+                            &nbsp&nbsp&nbsp
                         <%}%>
+
+                        <input type="submit" class="btn btn-info" value="Remove"/>
 
                     </form>
                     <div style="height: 5px;"></div>
@@ -65,7 +65,7 @@
                   <form action="addPlayer" method="post">
                       Enter 8-digit Player Code to add:
                       <div style="height: 10px;"></div>
-                      <input type="text" size="7" name="playerCode" autocomplete="off">
+                      <input type="search" size="7" name="playerCode" autocomplete="off">
                       <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
                       <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
                       &nbsp&nbsp&nbsp<input type="submit" class="btn btn-info" value="Add"/>
@@ -74,12 +74,11 @@
 
             <%}%>
 
-            <hr>
-
               <% 	switch(teamStatus)
         					{
         						  case "Live": case "Waiting":
         										%>
+                                <hr>
                                 <form action="takeBreak" method="post" onsubmit="return confirmChoice(<%= CONFIRM_TAKE_BREAK %>)">
                                     <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
                                     <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
@@ -91,6 +90,7 @@
 
         							case "Break":
         										%>
+                                <hr>
                                 <form action="returnFromBreak" method="post" onsubmit="return confirmChoice(<%= CONFIRM_RETURN_BREAK %>)">
                                     <input type="hidden" name="playerCode" value="<%= playerCode %>">
                                     <input type="hidden" name="teamCode" value="<%= playerTeamCode %>">
@@ -101,17 +101,18 @@
         										<%
         										break;
 
-                            case "Inactive":
+                      case "Inactive":
 
-                                if (teamBountiesOwed >= 1)
-                                {
+                            if (teamBountiesOwed >= 1)
+                            {
                             %>
-                                  <form action="rebuy" method="post" onsubmit="return confirmChoice(<%=CONFIRM_REBUY%>)">
-                                      <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
-                                      <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
-                                      <input type="submit" class="btn btn-info" value="Rebuy"/>
-                                  </form>
-                                  <div style="height: 8px;"></div>
+                                <hr>
+                                <form action="rebuy" method="post" onsubmit="return confirmChoice(<%=CONFIRM_REBUY%>)">
+                                    <input type="hidden" name="myTeamCode" value="<%= playerTeamCode %>">
+                                    <input type="hidden" name="myPlayerCode" value="<%= playerCode %>">
+                                    <input type="submit" class="btn btn-info" value="Rebuy"/>
+                                </form>
+                                <div style="height: 8px;"></div>
                             <%}
                               break;
 
