@@ -1,3 +1,31 @@
+var createError = require("http-errors");
+var express = require("express");
+const fileUpload = require('express-fileupload');
+var path = require('path');
+var bodyParser = require('body-parser');
+var CREDENTIALS = require('./gitignore/credentials.json');
+var session = require('express-session');
+var mysql = require('mysql2');
+var assassinRouter = require('./routes/assassin');
+const myCronModule = require(__dirname + '/public/javascripts/cronScripts.js');
+const cron = require('node-cron');
+var dbConn  = require('./lib/db');   // database object
+
+var app = express();
+app.use(bodyParser.json({ limit: "10mb", extended: true }));
+app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
+
+
+// Removed these from tutorials, not using
+
+// require('dotenv').config();
+// var cookieParser = require('cookie-parser');
+// var logger = require('morgan');
+// var flash = require('express-flash'); - stopped using
+
+// Global Confirm Code constants
+global.STRING_LENGTH = 45;  // set 45 char length for strings in mysql
+
 global.CRON_START_GAME_SCRIPT_RUNNING = 0;
 global.CRON_END_GAME_SCRIPT_RUNNING = 0;
 global.CRON_MORNING_START_SCRIPT_RUNNING = 0;
@@ -6,34 +34,6 @@ global.CRON_2_HOURS_TO_TO_SCRIPT_RUNNING = 0;
 global.CRON_1_HOUR_TO_GO_SCRIPT_RUNNING = 0;
 global.CRON_CHECK_MANY_PHOTOS_SCRIPT_RUNNING = 0;
 global.CRON_CHECK_OLD_PHOTOS_SCRIPT_RUNNING = 0;
-
-var createError = require("http-errors");
-var express = require("express");
-const fileUpload = require('express-fileupload');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var bodyParser = require('body-parser');
-var CREDENTIALS = require('./gitignore/credentials.json');
-
-const myCronModule = require(__dirname + '/public/javascripts/cronScripts.js');
-
-var flash = require('express-flash');
-var session = require('express-session');
-var mysql = require('mysql2');
-
-var assassinRouter = require('./routes/assassin');
-var app = express();
-// require('dotenv').config();
-
-app.use(bodyParser.json({ limit: "10mb", extended: true }));
-app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
-
-const cron = require('node-cron');
-var dbConn  = require('./lib/db');   // database object
-
-// Global Confirm Code constants
-global.STRING_LENGTH = 45;  // set 45 char length for strings in mysql
 
 global.ONE_PHOTO = "one";
 global.MORE_THAN_ONE_PHOTO = "more";
@@ -76,6 +76,7 @@ global.EVENT_MARK_TEAM_PAID = 21;
 global.EVENT_MARK_TEAM_ACTIVATED = 22;
 global.EVENT_MORNING_START = 23;
 global.EVENT_MARK_NIGHT_END = 24;
+global.EVENT_ADMIN_MESSAGE = 25;
 
 // Global Return Code constants
 global.CALL_SUCCESS = 1;
@@ -111,6 +112,12 @@ global.ERROR_INVALID_HOURS_TO_GO = 125;
 global.ERROR_INVALID_PREP_INPUTS = 126;
 global.ERROR_INSUFFICIENT_TEAMS_TO_START = 127;
 global.ERROR_FEATURE_UNAVAILABLE_UNTIL_PHOTO_APPROVED = 128;
+global.ERROR_AT_LEAST_ONE_INPUT_REQUIRED = 129;
+global.ERROR_INVALID_DATE = 130;
+global.ERROR_INVALID_INTEGER_INPUT = 131;
+global.ERROR_MYSQL_SYSTEM_ERROR_ON_RPC = 132;
+global.ERROR_ON_FILE_UPLOAD = 133;
+global.ERROR_FEATURE_UNAVAILABLE_OVERNIGHT = 134;
 
 const { auth } = require('express-openid-connect');
 
@@ -142,10 +149,10 @@ app.use((req, res, next) => {
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-app.use(logger('dev'));
+// app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+// app.use(cookieParser());
 
 app.use(express.static('public'));
 // app.use(express.static('upload'));
@@ -162,7 +169,7 @@ app.use(session({
     secret: 'secret'
 }))
 
-app.use(flash());
+// app.use(flash()); - stopped using, custom error checking
 
 app.use('/', assassinRouter);
 // app.use('/assassin', assassinRouter);
