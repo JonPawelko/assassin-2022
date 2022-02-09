@@ -80,6 +80,26 @@ addEventListener('keydown', function (event) {
 
   // -------------------------------------------
 
+  function confirmAdminMessageSize()
+  {
+      console.log("Got into confirmAdminMessageSize");
+
+      var message = document.forms["contactAdminForm"]["message"].value;
+
+      if (message.length > 100)   // max message len is 100
+      {
+          alert("Your message is too long.");
+          return false;
+      }
+      else
+      {
+        return true;
+      }
+
+  }
+
+  // -------------------------------------------
+
     function confirmInt(num)
     {
         return Number.isInteger(num);

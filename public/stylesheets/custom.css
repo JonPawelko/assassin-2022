@@ -6,6 +6,13 @@ hr
         background-color: gray;
 }
 
+textarea {
+  resize: none;
+}
+
+ul { margin: 0; padding: 15px;}
+
+
 .card
 {
          border-color: black;
@@ -37,7 +44,7 @@ img {
   border: 1px solid black;
   border-radius: 2px;
   padding: 2px;
-  width: 292px;
+  width: 295px;
 }
 
 .btn
